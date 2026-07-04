@@ -35,8 +35,7 @@ import static javax.tools.Diagnostic.Kind.WARNING;
 
 final class BundleValidator {
 
-    private BundleValidator() {
-    }
+    private BundleValidator() {}
 
     static Optional<BundleModel> resolve(TypeElement bundleElement, ProcessingEnvironment env) {
         MessageBundle annotation = bundleElement.getAnnotation(MessageBundle.class);
@@ -47,23 +46,29 @@ final class BundleValidator {
             return Optional.empty();
         }
 
-        Optional<ContractModel> contract = fromMeta(contractInterface, env)
-            .or(() -> ContractValidator.validate(contractInterface, env));
+        Optional<ContractModel> contract =
+                fromMeta(contractInterface, env).or(() -> ContractValidator.validate(contractInterface, env));
         if (contract.isEmpty()) {
-            env.getMessager().printMessage(ERROR,
-                "contract metadata not found for " + contractInterface.getQualifiedName()
-                    + "; make sure the contract module is compiled with messages-processor", bundleElement);
+            env.getMessager()
+                    .printMessage(
+                            ERROR,
+                            "contract metadata not found for " + contractInterface.getQualifiedName()
+                                    + "; make sure the contract module is compiled with messages-processor",
+                            bundleElement);
             return Optional.empty();
         }
 
-        String packageName = env.getElementUtils().getPackageOf(bundleElement).getQualifiedName().toString();
+        String packageName = env.getElementUtils()
+                .getPackageOf(bundleElement)
+                .getQualifiedName()
+                .toString();
         return Optional.of(new BundleModel(
-            contractInterface,
-            contract.get(),
-            List.of(annotation.locales()),
-            annotation.resolution(),
-            annotation.resources(),
-            packageName));
+                contractInterface,
+                contract.get(),
+                List.of(annotation.locales()),
+                annotation.resolution(),
+                annotation.resources(),
+                packageName));
     }
 
     /** Восстанавливает ContractModel из сгенерированного <Simple>Contract на classpath (имена параметров!). */
@@ -78,9 +83,9 @@ final class BundleValidator {
             return Optional.empty();
         }
         // типы параметров берём из interface-элемента (байткод), имена — из меты; связываем по имени метода
-        Map<String, ExecutableElement> methods = ElementFilter.methodsIn(contractInterface.getEnclosedElements())
-            .stream()
-            .collect(Collectors.toMap(m -> m.getSimpleName().toString(), m -> m));
+        Map<String, ExecutableElement> methods =
+                ElementFilter.methodsIn(contractInterface.getEnclosedElements()).stream()
+                        .collect(Collectors.toMap(m -> m.getSimpleName().toString(), m -> m));
 
         List<ContractModel.MessageModel> messages = new ArrayList<>();
         for (MessageMeta messageMeta : meta.value()) {
@@ -92,14 +97,18 @@ final class BundleValidator {
             ParamMeta[] paramMetas = messageMeta.params();
             for (int i = 0; i < paramMetas.length; i++) {
                 params.add(new ContractModel.ParamModel(
-                    paramMetas[i].name(), method.getParameters().get(i).asType()));
+                        paramMetas[i].name(), method.getParameters().get(i).asType()));
             }
             messages.add(new ContractModel.MessageModel(messageMeta.key(), messageMeta.method(), List.copyOf(params)));
         }
-        String packageName = env.getElementUtils().getPackageOf(contractInterface).getQualifiedName().toString();
-        String typeParamName = contractInterface.getTypeParameters().getFirst().getSimpleName().toString();
+        String packageName = env.getElementUtils()
+                .getPackageOf(contractInterface)
+                .getQualifiedName()
+                .toString();
+        String typeParamName =
+                contractInterface.getTypeParameters().getFirst().getSimpleName().toString();
         return Optional.of(new ContractModel(
-            packageName, contractInterface.getSimpleName().toString(), typeParamName, List.copyOf(messages)));
+                packageName, contractInterface.getSimpleName().toString(), typeParamName, List.copyOf(messages)));
     }
 
     static Optional<Map<String, Map<String, MessageTemplate>>> validate(
@@ -133,30 +142,35 @@ final class BundleValidator {
                     continue;
                 }
                 Set<String> paramNames = message.params().stream()
-                    .map(ContractModel.ParamModel::name)
-                    .collect(Collectors.toSet());
+                        .map(ContractModel.ParamModel::name)
+                        .collect(Collectors.toSet());
                 switch (TemplateParser.parse(message.key(), raw)) {
                     case ParseResult.Invalid(String key, int position, String reason) -> {
-                        messager.printMessage(ERROR,
-                            "[" + tag + "] key '" + key + "': malformed template at " + position + ": " + reason);
+                        messager.printMessage(
+                                ERROR,
+                                "[" + tag + "] key '" + key + "': malformed template at " + position + ": " + reason);
                         valid = false;
                     }
                     case ParseResult.Parsed(MessageTemplate template) -> {
                         Set<String> used = template.parts().stream()
-                            .filter(p -> p instanceof Placeholder)
-                            .map(p -> ((Placeholder) p).name())
-                            .collect(Collectors.toSet());
+                                .filter(p -> p instanceof Placeholder)
+                                .map(p -> ((Placeholder) p).name())
+                                .collect(Collectors.toSet());
                         for (String name : used) {
                             if (!paramNames.contains(name)) {
-                                messager.printMessage(ERROR, "[" + tag + "] key '" + message.key()
-                                    + "': unknown placeholder '{" + name + "}', expected one of " + paramNames);
+                                messager.printMessage(
+                                        ERROR,
+                                        "[" + tag + "] key '" + message.key() + "': unknown placeholder '{" + name
+                                                + "}', expected one of " + paramNames);
                                 valid = false;
                             }
                         }
                         for (String name : paramNames) {
                             if (!used.contains(name)) {
-                                messager.printMessage(WARNING, "[" + tag + "] key '" + message.key()
-                                    + "': parameter '" + name + "' is not used in the template");
+                                messager.printMessage(
+                                        WARNING,
+                                        "[" + tag + "] key '" + message.key() + "': parameter '" + name
+                                                + "' is not used in the template");
                             }
                         }
                         content.put(message.key(), template);
@@ -164,8 +178,8 @@ final class BundleValidator {
                 }
             }
             Set<String> knownKeys = model.contract().messages().stream()
-                .map(ContractModel.MessageModel::key)
-                .collect(Collectors.toSet());
+                    .map(ContractModel.MessageModel::key)
+                    .collect(Collectors.toSet());
             for (String key : properties.stringPropertyNames()) {
                 if (!knownKeys.contains(key)) {
                     messager.printMessage(WARNING, "[" + tag + "] key '" + key + "' is not declared in the contract");

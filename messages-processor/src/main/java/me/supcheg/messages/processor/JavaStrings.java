@@ -2,8 +2,7 @@ package me.supcheg.messages.processor;
 
 final class JavaStrings {
 
-    private JavaStrings() {
-    }
+    private JavaStrings() {}
 
     static String escape(String raw) {
         StringBuilder sb = new StringBuilder(raw.length());

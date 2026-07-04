@@ -5,9 +5,7 @@ import java.util.List;
 
 record ContractModel(String packageName, String simpleName, String typeParamName, List<MessageModel> messages) {
 
-    record MessageModel(String key, String methodName, List<ParamModel> params) {
-    }
+    record MessageModel(String key, String methodName, List<ParamModel> params) {}
 
-    record ParamModel(String name, TypeMirror type) {
-    }
+    record ParamModel(String name, TypeMirror type) {}
 }

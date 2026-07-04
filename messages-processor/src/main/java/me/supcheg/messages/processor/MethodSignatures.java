@@ -4,13 +4,10 @@ import java.util.stream.Collectors;
 
 final class MethodSignatures {
 
-    private MethodSignatures() {
-    }
+    private MethodSignatures() {}
 
     static String parameters(ContractModel.MessageModel message) {
-        return message.params().stream()
-            .map(p -> p.type() + " " + p.name())
-            .collect(Collectors.joining(", "));
+        return message.params().stream().map(p -> p.type() + " " + p.name()).collect(Collectors.joining(", "));
     }
 
     /** Тело Function<String,Object> для подстановки аргументов. */
@@ -19,8 +16,8 @@ final class MethodSignatures {
             return "name -> null";
         }
         String cases = message.params().stream()
-            .map(p -> "                case \"%s\" -> %s;".formatted(p.name(), p.name()))
-            .collect(Collectors.joining("\n"));
+                .map(p -> "                case \"%s\" -> %s;".formatted(p.name(), p.name()))
+                .collect(Collectors.joining("\n"));
         return """
             name -> switch (name) {
             %s

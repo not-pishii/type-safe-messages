@@ -5,13 +5,13 @@ import java.util.stream.Collectors;
 
 final class BundleNaming {
 
-    private BundleNaming() {
-    }
+    private BundleNaming() {}
 
     static String className(String tag) {
         return Arrays.stream(tag.split("-"))
-            .map(part -> Character.toUpperCase(part.charAt(0)) + part.substring(1).toLowerCase())
-            .collect(Collectors.joining());
+                .map(part -> Character.toUpperCase(part.charAt(0))
+                        + part.substring(1).toLowerCase())
+                .collect(Collectors.joining());
     }
 
     static String methodName(String tag) {

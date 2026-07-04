@@ -10,8 +10,7 @@ public final class StringRenderer implements MessageRenderer<String> {
         return INSTANCE;
     }
 
-    private StringRenderer() {
-    }
+    private StringRenderer() {}
 
     @Override
     public String literal(String text) {

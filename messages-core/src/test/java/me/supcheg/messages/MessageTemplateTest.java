@@ -11,13 +11,14 @@ class MessageTemplateTest {
 
     @Test
     void rendersLiteralsAndPlaceholdersInOrder() {
-        var template = new MessageTemplate("balance", List.of(
-            new Literal("У "),
-            new Placeholder("player"),
-            new Literal(" на счету "),
-            new Placeholder("coins"),
-            new Literal(" монет")
-        ));
+        var template = new MessageTemplate(
+                "balance",
+                List.of(
+                        new Literal("У "),
+                        new Placeholder("player"),
+                        new Literal(" на счету "),
+                        new Placeholder("coins"),
+                        new Literal(" монет")));
         Map<String, Object> args = Map.of("player", "Steve", "coins", 10);
 
         String result = template.render(StringRenderer.instance(), args::get);

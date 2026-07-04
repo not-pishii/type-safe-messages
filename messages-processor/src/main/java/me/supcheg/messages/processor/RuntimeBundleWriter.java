@@ -4,8 +4,7 @@ import java.util.stream.Collectors;
 
 final class RuntimeBundleWriter {
 
-    private RuntimeBundleWriter() {
-    }
+    private RuntimeBundleWriter() {}
 
     static String generatedName(BundleModel model) {
         return model.contract().simpleName() + "RuntimeBundle";
@@ -18,18 +17,18 @@ final class RuntimeBundleWriter {
         String bundleName = generatedName(model);
 
         String methods = model.contract().messages().stream()
-            .map(m -> """
+                .map(m -> """
                         @Override
                         public T %s(%s) {
                             Function<String, Object> args = %s;
                             return content.get("%s").render(renderer, args);
                         }
                 """.formatted(
-                    m.methodName(),
-                    MethodSignatures.parameters(m),
-                    MethodSignatures.argumentsFunction(m),
-                    JavaStrings.escape(m.key())))
-            .collect(Collectors.joining("\n"));
+                                m.methodName(),
+                                MethodSignatures.parameters(m),
+                                MethodSignatures.argumentsFunction(m),
+                                JavaStrings.escape(m.key())))
+                .collect(Collectors.joining("\n"));
 
         return """
             package %s;
@@ -60,8 +59,15 @@ final class RuntimeBundleWriter {
                 private %s() {
                 }
             }
-            """.formatted(model.packageName(), contractFqn, bundleName, contract,
-                JavaStrings.escape(model.resources()), contractMetaName,
-                contract, methods, bundleName);
+            """.formatted(
+                        model.packageName(),
+                        contractFqn,
+                        bundleName,
+                        contract,
+                        JavaStrings.escape(model.resources()),
+                        contractMetaName,
+                        contract,
+                        methods,
+                        bundleName);
     }
 }

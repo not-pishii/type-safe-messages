@@ -9,8 +9,7 @@ import java.util.stream.Collectors;
 
 final class CompileTimeBundleWriter {
 
-    private CompileTimeBundleWriter() {
-    }
+    private CompileTimeBundleWriter() {}
 
     static String generatedName(BundleModel model) {
         return model.contract().simpleName() + "Bundle";
@@ -22,25 +21,25 @@ final class CompileTimeBundleWriter {
         String bundleName = generatedName(model);
 
         String localesSet = model.localeTags().stream()
-            .map(tag -> "Locale.forLanguageTag(\"" + tag + "\")")
-            .collect(Collectors.joining(", "));
+                .map(tag -> "Locale.forLanguageTag(\"" + tag + "\")")
+                .collect(Collectors.joining(", "));
 
         String factories = model.localeTags().stream()
-            .map(tag -> """
+                .map(tag -> """
                     public static <T> %s<T> %s(MessageRenderer<T> renderer) {
                         return new %s<>(renderer);
                     }
                 """.formatted(contract, BundleNaming.methodName(tag), BundleNaming.className(tag)))
-            .collect(Collectors.joining("\n"));
+                .collect(Collectors.joining("\n"));
 
         String forLocaleCases = model.localeTags().stream()
-            .map(tag -> "            case \"%s\" -> Optional.of(%s(renderer));"
-                .formatted(tag, BundleNaming.methodName(tag)))
-            .collect(Collectors.joining("\n"));
+                .map(tag -> "            case \"%s\" -> Optional.of(%s(renderer));"
+                        .formatted(tag, BundleNaming.methodName(tag)))
+                .collect(Collectors.joining("\n"));
 
         String impls = model.localeTags().stream()
-            .map(tag -> localeImpl(model, tag, byLocale.get(tag)))
-            .collect(Collectors.joining("\n"));
+                .map(tag -> localeImpl(model, tag, byLocale.get(tag)))
+                .collect(Collectors.joining("\n"));
 
         return """
             package %s;
@@ -77,8 +76,16 @@ final class CompileTimeBundleWriter {
                 private %s() {
                 }
             }
-            """.formatted(model.packageName(), contractFqn, bundleName, localesSet, factories,
-                contract, forLocaleCases, impls, bundleName);
+            """.formatted(
+                        model.packageName(),
+                        contractFqn,
+                        bundleName,
+                        localesSet,
+                        factories,
+                        contract,
+                        forLocaleCases,
+                        impls,
+                        bundleName);
     }
 
     private static String localeImpl(BundleModel model, String tag, Map<String, MessageTemplate> content) {
@@ -86,26 +93,26 @@ final class CompileTimeBundleWriter {
         String className = BundleNaming.className(tag);
 
         String templateFields = model.contract().messages().stream()
-            .map(m -> "        private static final MessageTemplate %s = new MessageTemplate(\"%s\", List.of(%s));"
-                .formatted(
-                    BundleNaming.constantName(m.methodName()),
-                    JavaStrings.escape(m.key()),
-                    templateParts(content.get(m.key()))))
-            .collect(Collectors.joining("\n"));
+                .map(m -> "        private static final MessageTemplate %s = new MessageTemplate(\"%s\", List.of(%s));"
+                        .formatted(
+                                BundleNaming.constantName(m.methodName()),
+                                JavaStrings.escape(m.key()),
+                                templateParts(content.get(m.key()))))
+                .collect(Collectors.joining("\n"));
 
         String methods = model.contract().messages().stream()
-            .map(m -> """
+                .map(m -> """
                         @Override
                         public T %s(%s) {
                             Function<String, Object> args = %s;
                             return %s.render(renderer, args);
                         }
                 """.formatted(
-                    m.methodName(),
-                    MethodSignatures.parameters(m),
-                    MethodSignatures.argumentsFunction(m),
-                    BundleNaming.constantName(m.methodName())))
-            .collect(Collectors.joining("\n"));
+                                m.methodName(),
+                                MethodSignatures.parameters(m),
+                                MethodSignatures.argumentsFunction(m),
+                                BundleNaming.constantName(m.methodName())))
+                .collect(Collectors.joining("\n"));
 
         return """
                 private record %s<T>(MessageRenderer<T> renderer) implements %s<T> {
@@ -118,10 +125,10 @@ final class CompileTimeBundleWriter {
 
     private static String templateParts(MessageTemplate template) {
         return template.parts().stream()
-            .map(part -> switch (part) {
-                case Literal(String text) -> "new Literal(\"" + JavaStrings.escape(text) + "\")";
-                case Placeholder(String name) -> "new Placeholder(\"" + name + "\")";
-            })
-            .collect(Collectors.joining(", "));
+                .map(part -> switch (part) {
+                    case Literal(String text) -> "new Literal(\"" + JavaStrings.escape(text) + "\")";
+                    case Placeholder(String name) -> "new Placeholder(\"" + name + "\")";
+                })
+                .collect(Collectors.joining(", "));
     }
 }

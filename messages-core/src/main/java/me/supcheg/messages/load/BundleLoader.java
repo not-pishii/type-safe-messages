@@ -22,8 +22,7 @@ import java.util.stream.Collectors;
 /** Загрузка и валидация переводов из properties-файла. Повторяет проверки процессора. */
 public final class BundleLoader {
 
-    private BundleLoader() {
-    }
+    private BundleLoader() {}
 
     public static BundleLoad<Map<String, MessageTemplate>> load(
             Path dir, Locale locale, String baseName, ContractShape shape) {
@@ -36,8 +35,8 @@ public final class BundleLoader {
         try (Reader reader = Files.newBufferedReader(file, StandardCharsets.UTF_8)) {
             properties.load(reader);
         } catch (IOException e) {
-            return new BundleLoad.Failed<>(List.of(
-                new ContentProblem.UnreadableFile(locale, file.toString(), e.getMessage())));
+            return new BundleLoad.Failed<>(
+                    List.of(new ContentProblem.UnreadableFile(locale, file.toString(), e.getMessage())));
         }
 
         List<ContentProblem> problems = new ArrayList<>();
@@ -54,21 +53,21 @@ public final class BundleLoader {
                 case ParseResult.Parsed(MessageTemplate template) -> {
                     Set<String> expected = Set.copyOf(message.placeholders());
                     Set<String> unknown = template.parts().stream()
-                        .filter(part -> part instanceof Placeholder)
-                        .map(part -> ((Placeholder) part).name())
-                        .filter(name -> !expected.contains(name))
-                        .collect(Collectors.toSet());
+                            .filter(part -> part instanceof Placeholder)
+                            .map(part -> ((Placeholder) part).name())
+                            .filter(name -> !expected.contains(name))
+                            .collect(Collectors.toSet());
                     if (unknown.isEmpty()) {
                         content.put(message.key(), template);
                     } else {
                         unknown.forEach(name -> problems.add(
-                            new ContentProblem.UnknownPlaceholder(locale, message.key(), name, expected)));
+                                new ContentProblem.UnknownPlaceholder(locale, message.key(), name, expected)));
                     }
                 }
             }
         }
         return problems.isEmpty()
-            ? new BundleLoad.Loaded<>(Map.copyOf(content))
-            : new BundleLoad.Failed<>(List.copyOf(problems));
+                ? new BundleLoad.Loaded<>(Map.copyOf(content))
+                : new BundleLoad.Failed<>(List.copyOf(problems));
     }
 }

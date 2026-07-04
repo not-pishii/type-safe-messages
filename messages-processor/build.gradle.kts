@@ -33,8 +33,10 @@ tasks {
             ":messages-core:publishAllPublicationsToTestRepoRepository",
             ":messages-processor:publishAllPublicationsToTestRepoRepository",
         )
-        systemProperty("test.repo", rootProject.layout.buildDirectory.dir("test-repo").get().asFile.toURI().toString())
+        systemProperty(
+            "test.repo",
+            rootProject.layout.buildDirectory.dir("test-repo").get().asFile.toURI().toString(),
+        )
         systemProperty("test.version", version.toString())
     }
 }
-

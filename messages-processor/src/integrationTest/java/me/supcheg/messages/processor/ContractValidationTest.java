@@ -10,9 +10,8 @@ import static com.google.testing.compile.Compiler.javac;
 class ContractValidationTest {
 
     private static Compilation compile(String source) {
-        return javac()
-            .withProcessors(new MessagesProcessor())
-            .compile(JavaFileObjects.forSourceString("com.example.GameMessages", source));
+        return javac().withProcessors(new MessagesProcessor())
+                .compile(JavaFileObjects.forSourceString("com.example.GameMessages", source));
     }
 
     @Test
@@ -146,9 +145,8 @@ class ContractValidationTest {
 
     @Test
     void classAnnotatedWithMessagesFails() {
-        var compilation = javac()
-            .withProcessors(new MessagesProcessor())
-            .compile(JavaFileObjects.forSourceString("com.example.NotAnInterface", """
+        var compilation = javac().withProcessors(new MessagesProcessor())
+                .compile(JavaFileObjects.forSourceString("com.example.NotAnInterface", """
                 package com.example;
 
                 import me.supcheg.messages.annotation.Messages;

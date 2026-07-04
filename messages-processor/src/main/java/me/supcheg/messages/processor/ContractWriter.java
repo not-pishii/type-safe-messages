@@ -5,8 +5,7 @@ import java.util.stream.Collectors;
 
 final class ContractWriter {
 
-    private ContractWriter() {
-    }
+    private ContractWriter() {}
 
     static String generatedName(ContractModel model) {
         return model.simpleName() + "Contract";
@@ -14,24 +13,24 @@ final class ContractWriter {
 
     static String write(ContractModel model) {
         String metaEntries = model.messages().stream()
-            .map(m -> {
-                String params = m.params().stream()
-                    .map(p -> "@ParamMeta(name = \"%s\", type = \"%s\")".formatted(p.name(), typeToString(p.type())))
-                    .collect(Collectors.joining(", "));
-                return "    @MessageMeta(key = \"%s\", method = \"%s\", params = {%s})"
-                    .formatted(JavaStrings.escape(m.key()), m.methodName(), params);
-            })
-            .collect(Collectors.joining(",\n"));
+                .map(m -> {
+                    String params = m.params().stream()
+                            .map(p -> "@ParamMeta(name = \"%s\", type = \"%s\")"
+                                    .formatted(p.name(), typeToString(p.type())))
+                            .collect(Collectors.joining(", "));
+                    return "    @MessageMeta(key = \"%s\", method = \"%s\", params = {%s})"
+                            .formatted(JavaStrings.escape(m.key()), m.methodName(), params);
+                })
+                .collect(Collectors.joining(",\n"));
 
         String shapeEntries = model.messages().stream()
-            .map(m -> {
-                String placeholders = m.params().stream()
-                    .map(p -> "\"" + p.name() + "\"")
-                    .collect(Collectors.joining(", "));
-                return "        new MessageShape(\"%s\", \"%s\", List.of(%s))"
-                    .formatted(JavaStrings.escape(m.key()), m.methodName(), placeholders);
-            })
-            .collect(Collectors.joining(",\n"));
+                .map(m -> {
+                    String placeholders =
+                            m.params().stream().map(p -> "\"" + p.name() + "\"").collect(Collectors.joining(", "));
+                    return "        new MessageShape(\"%s\", \"%s\", List.of(%s))"
+                            .formatted(JavaStrings.escape(m.key()), m.methodName(), placeholders);
+                })
+                .collect(Collectors.joining(",\n"));
 
         return """
             package %s;
@@ -55,7 +54,8 @@ final class ContractWriter {
                 private %s() {
                 }
             }
-            """.formatted(model.packageName(), metaEntries, generatedName(model), shapeEntries, generatedName(model));
+            """.formatted(
+                        model.packageName(), metaEntries, generatedName(model), shapeEntries, generatedName(model));
     }
 
     private static String typeToString(TypeMirror type) {

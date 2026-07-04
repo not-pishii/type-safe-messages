@@ -8,7 +8,8 @@ tasks {
     compileJava {
         val messagesDir = layout.projectDirectory.dir("src/main/messages")
 
-        inputs.dir(messagesDir)
+        inputs
+            .dir(messagesDir)
             .withPathSensitivity(PathSensitivity.RELATIVE)
             .withPropertyName("messagesDir")
 

@@ -11,8 +11,7 @@ import java.util.List;
 /** Парсер шаблонов {@code {name}} с экранированием {@code \{} и {@code \\}. */
 public final class TemplateParser {
 
-    private TemplateParser() {
-    }
+    private TemplateParser() {}
 
     public static ParseResult parse(String key, String raw) {
         List<TemplatePart> parts = new ArrayList<>();
