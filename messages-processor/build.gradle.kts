@@ -1,7 +1,7 @@
 plugins {
-    id("messages.java-conventions")
-    id("messages.test-suites")
-    id("messages.publishing")
+    alias(conventions.plugins.messages.java.conventions)
+    alias(conventions.plugins.messages.test.suites)
+    alias(conventions.plugins.messages.publishing)
 }
 
 dependencies {
@@ -26,12 +26,15 @@ testing {
     }
 }
 
-tasks.named<Test>("functionalTest") {
-    dependsOn(
-        ":messages-annotations:publishAllPublicationsToTestRepoRepository",
-        ":messages-core:publishAllPublicationsToTestRepoRepository",
-        ":messages-processor:publishAllPublicationsToTestRepoRepository",
-    )
-    systemProperty("test.repo", rootProject.layout.buildDirectory.dir("test-repo").get().asFile.toURI().toString())
-    systemProperty("test.version", version.toString())
+tasks {
+    functionalTest {
+        dependsOn(
+            ":messages-annotations:publishAllPublicationsToTestRepoRepository",
+            ":messages-core:publishAllPublicationsToTestRepoRepository",
+            ":messages-processor:publishAllPublicationsToTestRepoRepository",
+        )
+        systemProperty("test.repo", rootProject.layout.buildDirectory.dir("test-repo").get().asFile.toURI().toString())
+        systemProperty("test.version", version.toString())
+    }
 }
+

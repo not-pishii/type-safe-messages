@@ -4,10 +4,14 @@ plugins {
 
 val messagesDir = layout.projectDirectory.dir("src/main/messages")
 
-tasks.named<JavaCompile>("compileJava") {
-    inputs.dir(messagesDir)
-        .withPathSensitivity(PathSensitivity.RELATIVE)
-        .withPropertyName("messagesDir")
+tasks {
+    compileJava {
+        val messagesDir = layout.projectDirectory.dir("src/main/messages")
 
-    options.compilerArgs.add("-Amessages.dir=${messagesDir.asFile.absolutePath}")
+        inputs.dir(messagesDir)
+            .withPathSensitivity(PathSensitivity.RELATIVE)
+            .withPropertyName("messagesDir")
+
+        options.compilerArgs.add("-Amessages.dir=${messagesDir.asFile.absolutePath}")
+    }
 }
