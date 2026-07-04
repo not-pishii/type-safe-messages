@@ -1,4 +1,4 @@
 plugins {
-    id("messages.java-conventions")
-    id("messages.publishing")
+    alias(conventions.plugins.messages.java.conventions)
+    alias(conventions.plugins.messages.publishing)
 }

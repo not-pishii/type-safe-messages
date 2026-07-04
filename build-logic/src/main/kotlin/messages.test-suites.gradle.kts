@@ -21,6 +21,11 @@ testing {
     }
 }
 
-tasks.named("check") {
-    dependsOn(testing.suites.named("integrationTest"), testing.suites.named("functionalTest"))
+tasks {
+    check {
+        dependsOn(
+            testing.suites.named("integrationTest"),
+            testing.suites.named("functionalTest"),
+        )
+    }
 }

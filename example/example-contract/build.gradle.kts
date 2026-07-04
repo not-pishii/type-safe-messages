@@ -1,5 +1,5 @@
 plugins {
-    id("messages.java-conventions")
+    alias(conventions.plugins.messages.java.conventions)
 }
 
 dependencies {

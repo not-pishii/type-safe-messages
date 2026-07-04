@@ -1,6 +1,3 @@
-import gradle.kotlin.dsl.accessors._784b33a1853adbd9d7bde23f270505af.mavenPublishing
-import gradle.kotlin.dsl.accessors._784b33a1853adbd9d7bde23f270505af.publishing
-
 plugins {
     alias(libs.plugins.vanniktech.maven.publish)
 }
