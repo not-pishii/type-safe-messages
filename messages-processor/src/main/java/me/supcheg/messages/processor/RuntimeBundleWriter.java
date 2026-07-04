@@ -38,17 +38,19 @@ final class RuntimeBundleWriter {
             import java.nio.file.Path;
             import java.util.Locale;
             import java.util.Map;
+            import java.util.List;
             import java.util.function.Function;
+            import me.supcheg.routine.Either;
             import me.supcheg.messages.MessageRenderer;
             import me.supcheg.messages.MessageTemplate;
-            import me.supcheg.messages.load.BundleLoad;
             import me.supcheg.messages.load.BundleLoader;
+            import me.supcheg.messages.load.ContentProblem;
 
             public final class %s {
 
-                public static <T> BundleLoad<%s<T>> load(Path dir, Locale locale, MessageRenderer<T> renderer) {
+                public static <T> Either<List<ContentProblem>, %s<T>> load(Path dir, Locale locale, MessageRenderer<T> renderer) {
                     return BundleLoader.load(dir, locale, "%s", %s.SHAPE)
-                        .map(content -> new Impl<>(content, renderer));
+                        .mapRight(content -> new Impl<>(content, renderer));
                 }
 
                 private record Impl<T>(Map<String, MessageTemplate> content, MessageRenderer<T> renderer)

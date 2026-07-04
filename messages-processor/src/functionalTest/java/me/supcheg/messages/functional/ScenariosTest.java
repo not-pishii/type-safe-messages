@@ -110,23 +110,20 @@ class ScenariosTest {
             package app;
 
             import me.supcheg.messages.StringRenderer;
-            import me.supcheg.messages.load.BundleLoad;
             import msg.GameMessages;
             import msg.GameMessagesRuntimeBundle;
 
             import java.nio.file.Path;
             import java.util.Locale;
+            import java.util.stream.Stream;
 
             public final class Main {
                 public static void main(String[] args) {
-                    BundleLoad<GameMessages<String>> load = GameMessagesRuntimeBundle.load(
-                        Path.of(args[0]), Locale.of("ru"), StringRenderer.instance());
-                    switch (load) {
-                        case BundleLoad.Loaded<GameMessages<String>> loaded ->
-                            System.out.println("LOADED: " + loaded.messages().playerJoined("Steve"));
-                        case BundleLoad.Failed<GameMessages<String>> failed ->
-                            failed.problems().forEach(p -> System.out.println("PROBLEM: " + p.describe()));
-                    }
+                    GameMessagesRuntimeBundle.load(Path.of(args[0]), Locale.of("ru"), StringRenderer.instance())
+                        .fold(
+                                problems -> problems.stream().map(p -> "PROBLEM: " + p.describe()),
+                                loaded -> Stream.of(loaded.playerJoined("Steve")))
+                        .forEach(IO::println);
                 }
             }
             """);

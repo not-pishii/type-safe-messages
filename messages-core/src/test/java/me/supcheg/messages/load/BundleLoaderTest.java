@@ -31,24 +31,18 @@ class BundleLoaderTest {
 
         var result = BundleLoader.load(dir, Locale.of("ru"), "messages", SHAPE);
 
-        assertThat(result).isInstanceOfSatisfying(BundleLoad.Loaded.class, loaded -> {
-            @SuppressWarnings("unchecked")
-            var content = (Map<String, me.supcheg.messages.MessageTemplate>) loaded.messages();
-            assertThat(content.get("balance")
-                            .render(
-                                    StringRenderer.instance(),
-                                    Map.<String, Object>of("player", "Steve", "coins", 10)::get))
-                    .isEqualTo("У Steve на счету 10");
-        });
+        assertThat(result.right()).hasValueSatisfying(content -> assertThat(content.get("balance")
+                        .render(StringRenderer.instance(), Map.<String, Object>of("player", "Steve", "coins", 10)::get))
+                .isEqualTo("У Steve на счету 10"));
     }
 
     @Test
     void missingFileFails() {
         var result = BundleLoader.load(dir, Locale.of("de"), "messages", SHAPE);
 
-        assertThat(result).isInstanceOfSatisfying(BundleLoad.Failed.class, failed -> assertThat(failed.problems())
-                .singleElement()
-                .isInstanceOf(ContentProblem.MissingFile.class));
+        assertThat(result.left())
+                .hasValueSatisfying(problems ->
+                        assertThat(problems).singleElement().isInstanceOf(ContentProblem.MissingFile.class));
     }
 
     @Test
@@ -59,7 +53,7 @@ class BundleLoaderTest {
 
         var result = BundleLoader.load(dir, Locale.of("ru"), "messages", SHAPE);
 
-        assertThat(result).isInstanceOfSatisfying(BundleLoad.Failed.class, failed -> assertThat(failed.problems())
+        assertThat(result.left()).hasValueSatisfying(problems -> assertThat(problems)
                 .hasExactlyElementsOfTypes(ContentProblem.UnknownPlaceholder.class, ContentProblem.MissingKey.class));
     }
 
@@ -72,24 +66,11 @@ class BundleLoaderTest {
 
         var result = BundleLoader.load(dir, Locale.of("ru"), "messages", SHAPE);
 
-        assertThat(result).isInstanceOfSatisfying(BundleLoad.Failed.class, failed -> {
-            @SuppressWarnings("unchecked")
-            var problems = (List<ContentProblem>) failed.problems();
-            assertThat(problems)
-                    .singleElement()
-                    .isInstanceOfSatisfying(ContentProblem.MalformedTemplate.class, problem -> {
-                        assertThat(problem.key()).isEqualTo("playerJoined");
-                        assertThat(problem.reason()).contains("unclosed");
-                    });
-        });
-    }
-
-    @Test
-    void mapTransformsLoadedAndKeepsFailed() {
-        BundleLoad<Integer> loaded = new BundleLoad.Loaded<>(21);
-        BundleLoad<Integer> failed = new BundleLoad.Failed<>(List.of());
-
-        assertThat(loaded.map(x -> x * 2)).isEqualTo(new BundleLoad.Loaded<>(42));
-        assertThat(failed.map(x -> x * 2)).isInstanceOf(BundleLoad.Failed.class);
+        assertThat(result.left()).hasValueSatisfying(problems -> assertThat(problems)
+                .singleElement()
+                .isInstanceOfSatisfying(ContentProblem.MalformedTemplate.class, problem -> {
+                    assertThat(problem.key()).isEqualTo("playerJoined");
+                    assertThat(problem.reason()).contains("unclosed");
+                }));
     }
 }

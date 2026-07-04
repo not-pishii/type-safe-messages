@@ -4,6 +4,7 @@ import me.supcheg.messages.MessageTemplate;
 import me.supcheg.messages.Placeholder;
 import me.supcheg.messages.parse.ParseResult;
 import me.supcheg.messages.parse.TemplateParser;
+import me.supcheg.routine.Either;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -24,19 +25,18 @@ public final class BundleLoader {
 
     private BundleLoader() {}
 
-    public static BundleLoad<Map<String, MessageTemplate>> load(
+    public static Either<List<ContentProblem>, Map<String, MessageTemplate>> load(
             Path dir, Locale locale, String baseName, ContractShape shape) {
         String fileName = baseName + "_" + locale.toLanguageTag().replace('-', '_') + ".properties";
         Path file = dir.resolve(fileName);
         if (!Files.isRegularFile(file)) {
-            return new BundleLoad.Failed<>(List.of(new ContentProblem.MissingFile(locale, file.toString())));
+            return Either.left(List.of(new ContentProblem.MissingFile(locale, file.toString())));
         }
         Properties properties = new Properties();
         try (Reader reader = Files.newBufferedReader(file, StandardCharsets.UTF_8)) {
             properties.load(reader);
         } catch (IOException e) {
-            return new BundleLoad.Failed<>(
-                    List.of(new ContentProblem.UnreadableFile(locale, file.toString(), e.getMessage())));
+            return Either.left(List.of(new ContentProblem.UnreadableFile(locale, file.toString(), e.getMessage())));
         }
 
         List<ContentProblem> problems = new ArrayList<>();
@@ -66,8 +66,6 @@ public final class BundleLoader {
                 }
             }
         }
-        return problems.isEmpty()
-                ? new BundleLoad.Loaded<>(Map.copyOf(content))
-                : new BundleLoad.Failed<>(List.copyOf(problems));
+        return problems.isEmpty() ? Either.right(Map.copyOf(content)) : Either.left(List.copyOf(problems));
     }
 }
