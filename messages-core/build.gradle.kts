@@ -3,6 +3,10 @@ plugins {
     alias(conventions.plugins.messages.publishing)
 }
 
+dependencies {
+    api(libs.routine)
+}
+
 testing {
     suites {
         named<JvmTestSuite>("test") {
