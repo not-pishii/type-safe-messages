@@ -46,7 +46,7 @@ class RuntimeGenerationTest {
                 .generatedSourceFile("com.example.GameMessagesRuntimeBundle")
                 .contentsAsUtf8String();
         contents.contains(
-                "public static <T> BundleLoad<GameMessages<T>> load(Path dir, Locale locale, MessageRenderer<T> renderer)");
+                "public static <T> Either<List<ContentProblem>, GameMessages<T>> load(Path dir, Locale locale, MessageRenderer<T> renderer)");
         contents.contains("BundleLoader.load(dir, locale, \"messages\", com.example.GameMessagesContract.SHAPE)");
         contents.contains("content.get(\"playerJoined\").render(renderer, args)");
     }
