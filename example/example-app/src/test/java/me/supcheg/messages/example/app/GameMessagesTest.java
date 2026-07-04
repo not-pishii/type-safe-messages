@@ -27,6 +27,7 @@ class GameMessagesTest {
 
     @Test
     void unknownLocaleIsEmpty() {
-        assertThat(GameMessagesBundle.forLocale(Locale.GERMAN, StringRenderer.instance())).isEmpty();
+        assertThat(GameMessagesBundle.forLocale(Locale.GERMAN, StringRenderer.instance()))
+                .isEmpty();
     }
 }

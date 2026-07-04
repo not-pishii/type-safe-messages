@@ -13,12 +13,12 @@ class RuntimeGenerationTest {
 
     @Test
     void generatesRuntimeLoaderBackedBundle() {
-        Path dir = Path.of("src", "integrationTest", "resources", "fixtures", "valid").toAbsolutePath();
-        Compilation compilation = javac()
-            .withProcessors(new MessagesProcessor())
-            .withOptions("-Amessages.dir=" + dir)
-            .compile(
-                JavaFileObjects.forSourceString("com.example.GameMessages", """
+        Path dir = Path.of("src", "integrationTest", "resources", "fixtures", "valid")
+                .toAbsolutePath();
+        Compilation compilation = javac().withProcessors(new MessagesProcessor())
+                .withOptions("-Amessages.dir=" + dir)
+                .compile(
+                        JavaFileObjects.forSourceString("com.example.GameMessages", """
                     package com.example;
 
                     import me.supcheg.messages.annotation.Messages;
@@ -29,7 +29,7 @@ class RuntimeGenerationTest {
                         T balance(String player, int coins);
                     }
                     """),
-                JavaFileObjects.forSourceString("com.example.GameRuntime", """
+                        JavaFileObjects.forSourceString("com.example.GameRuntime", """
                     package com.example;
 
                     import me.supcheg.messages.annotation.MessageBundle;
@@ -42,21 +42,23 @@ class RuntimeGenerationTest {
                     """));
 
         assertThat(compilation).succeeded();
-        var contents = assertThat(compilation).generatedSourceFile("com.example.GameMessagesRuntimeBundle")
-            .contentsAsUtf8String();
-        contents.contains("public static <T> BundleLoad<GameMessages<T>> load(Path dir, Locale locale, MessageRenderer<T> renderer)");
+        var contents = assertThat(compilation)
+                .generatedSourceFile("com.example.GameMessagesRuntimeBundle")
+                .contentsAsUtf8String();
+        contents.contains(
+                "public static <T> BundleLoad<GameMessages<T>> load(Path dir, Locale locale, MessageRenderer<T> renderer)");
         contents.contains("BundleLoader.load(dir, locale, \"messages\", com.example.GameMessagesContract.SHAPE)");
         contents.contains("content.get(\"playerJoined\").render(renderer, args)");
     }
 
     @Test
     void generatesRuntimeBundleWhenContractInDifferentPackage() {
-        Path dir = Path.of("src", "integrationTest", "resources", "fixtures", "valid").toAbsolutePath();
-        Compilation compilation = javac()
-            .withProcessors(new MessagesProcessor())
-            .withOptions("-Amessages.dir=" + dir)
-            .compile(
-                JavaFileObjects.forSourceString("com.example.api.GameMessages", """
+        Path dir = Path.of("src", "integrationTest", "resources", "fixtures", "valid")
+                .toAbsolutePath();
+        Compilation compilation = javac().withProcessors(new MessagesProcessor())
+                .withOptions("-Amessages.dir=" + dir)
+                .compile(
+                        JavaFileObjects.forSourceString("com.example.api.GameMessages", """
                     package com.example.api;
 
                     import me.supcheg.messages.annotation.Messages;
@@ -67,7 +69,7 @@ class RuntimeGenerationTest {
                         T balance(String player, int coins);
                     }
                     """),
-                JavaFileObjects.forSourceString("com.example.impl.GameRuntime", """
+                        JavaFileObjects.forSourceString("com.example.impl.GameRuntime", """
                     package com.example.impl;
 
                     import com.example.api.GameMessages;
@@ -82,8 +84,8 @@ class RuntimeGenerationTest {
 
         assertThat(compilation).succeeded();
         var contents = assertThat(compilation)
-            .generatedSourceFile("com.example.impl.GameMessagesRuntimeBundle")
-            .contentsAsUtf8String();
+                .generatedSourceFile("com.example.impl.GameMessagesRuntimeBundle")
+                .contentsAsUtf8String();
         contents.contains("com.example.api.GameMessagesContract.SHAPE");
     }
 }

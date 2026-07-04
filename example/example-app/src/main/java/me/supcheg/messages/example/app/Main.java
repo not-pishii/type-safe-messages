@@ -12,6 +12,5 @@ public final class Main {
         System.out.println(ru.balance("Steve", 10));
     }
 
-    private Main() {
-    }
+    private Main() {}
 }

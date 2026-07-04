@@ -6,10 +6,9 @@ import javax.lang.model.element.TypeElement;
 import java.util.List;
 
 record BundleModel(
-    TypeElement contractInterface,
-    ContractModel contract,
-    List<String> localeTags,
-    Resolution resolution,
-    String resources,
-    String packageName) {
-}
+        TypeElement contractInterface,
+        ContractModel contract,
+        List<String> localeTags,
+        Resolution resolution,
+        String resources,
+        String packageName) {}

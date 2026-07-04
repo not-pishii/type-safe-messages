@@ -1,9 +1,10 @@
 package me.supcheg.messages.parse;
 
 import me.supcheg.messages.Literal;
-import me.supcheg.messages.Placeholder;
 import me.supcheg.messages.StringRenderer;
-import net.jqwik.api.*;
+import net.jqwik.api.Assume;
+import net.jqwik.api.ForAll;
+import net.jqwik.api.Property;
 import net.jqwik.api.constraints.AlphaChars;
 import net.jqwik.api.constraints.NotBlank;
 import net.jqwik.api.constraints.StringLength;
@@ -18,8 +19,9 @@ class TemplateParserProperties {
 
         var result = TemplateParser.parse("k", text);
 
-        assertThat(result).isInstanceOfSatisfying(ParseResult.Parsed.class, parsed ->
-            assertThat(parsed.template().parts()).containsExactly(new Literal(text)));
+        assertThat(result).isInstanceOfSatisfying(ParseResult.Parsed.class, parsed -> assertThat(
+                        parsed.template().parts())
+                .containsExactly(new Literal(text)));
     }
 
     @Property
@@ -30,8 +32,8 @@ class TemplateParserProperties {
 
         var result = TemplateParser.parse("k", "pre {" + name + "} post");
 
-        assertThat(result).isInstanceOfSatisfying(ParseResult.Parsed.class, parsed ->
-            assertThat(parsed.template().render(StringRenderer.instance(), n -> value))
+        assertThat(result).isInstanceOfSatisfying(ParseResult.Parsed.class, parsed -> assertThat(
+                        parsed.template().render(StringRenderer.instance(), n -> value))
                 .isEqualTo("pre " + value + " post"));
     }
 }

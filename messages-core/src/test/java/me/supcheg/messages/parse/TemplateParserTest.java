@@ -12,21 +12,22 @@ class TemplateParserTest {
     void parsesLiteralsAndPlaceholders() {
         var result = TemplateParser.parse("k", "Привет, {player}! Монет: {coins}");
 
-        assertThat(result).isInstanceOfSatisfying(ParseResult.Parsed.class, parsed ->
-            assertThat(parsed.template().parts()).containsExactly(
-                new Literal("Привет, "),
-                new Placeholder("player"),
-                new Literal("! Монет: "),
-                new Placeholder("coins")
-            ));
+        assertThat(result).isInstanceOfSatisfying(ParseResult.Parsed.class, parsed -> assertThat(
+                        parsed.template().parts())
+                .containsExactly(
+                        new Literal("Привет, "),
+                        new Placeholder("player"),
+                        new Literal("! Монет: "),
+                        new Placeholder("coins")));
     }
 
     @Test
     void escapedBraceIsLiteral() {
         var result = TemplateParser.parse("k", "json: \\{not a placeholder}");
 
-        assertThat(result).isInstanceOfSatisfying(ParseResult.Parsed.class, parsed ->
-            assertThat(parsed.template().parts()).containsExactly(new Literal("json: {not a placeholder}")));
+        assertThat(result).isInstanceOfSatisfying(ParseResult.Parsed.class, parsed -> assertThat(
+                        parsed.template().parts())
+                .containsExactly(new Literal("json: {not a placeholder}")));
     }
 
     @Test
@@ -43,8 +44,9 @@ class TemplateParserTest {
     void escapedBackslashIsLiteral() {
         var result = TemplateParser.parse("k", "a\\\\b");
 
-        assertThat(result).isInstanceOfSatisfying(ParseResult.Parsed.class, parsed ->
-            assertThat(parsed.template().parts()).containsExactly(new Literal("a\\b")));
+        assertThat(result).isInstanceOfSatisfying(ParseResult.Parsed.class, parsed -> assertThat(
+                        parsed.template().parts())
+                .containsExactly(new Literal("a\\b")));
     }
 
     @Test

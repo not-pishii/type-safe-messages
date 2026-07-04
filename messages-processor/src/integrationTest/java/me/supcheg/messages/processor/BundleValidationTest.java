@@ -24,13 +24,13 @@ class BundleValidationTest {
         """;
 
     private static Compilation compileWithFixture(String fixture, String bundleSource) {
-        Path dir = Path.of("src", "integrationTest", "resources", "fixtures", fixture).toAbsolutePath();
-        return javac()
-            .withProcessors(new MessagesProcessor())
-            .withOptions("-Amessages.dir=" + dir)
-            .compile(
-                JavaFileObjects.forSourceString("com.example.GameMessages", CONTRACT),
-                JavaFileObjects.forSourceString("com.example.GameBundle", bundleSource));
+        Path dir = Path.of("src", "integrationTest", "resources", "fixtures", fixture)
+                .toAbsolutePath();
+        return javac().withProcessors(new MessagesProcessor())
+                .withOptions("-Amessages.dir=" + dir)
+                .compile(
+                        JavaFileObjects.forSourceString("com.example.GameMessages", CONTRACT),
+                        JavaFileObjects.forSourceString("com.example.GameBundle", bundleSource));
     }
 
     private static final String BUNDLE_RU_EN = """
@@ -87,11 +87,10 @@ class BundleValidationTest {
 
     @Test
     void missingDirOptionFails() {
-        Compilation compilation = javac()
-            .withProcessors(new MessagesProcessor())
-            .compile(
-                JavaFileObjects.forSourceString("com.example.GameMessages", CONTRACT),
-                JavaFileObjects.forSourceString("com.example.GameBundle", BUNDLE_RU));
+        Compilation compilation = javac().withProcessors(new MessagesProcessor())
+                .compile(
+                        JavaFileObjects.forSourceString("com.example.GameMessages", CONTRACT),
+                        JavaFileObjects.forSourceString("com.example.GameBundle", BUNDLE_RU));
 
         assertThat(compilation).failed();
         assertThat(compilation).hadErrorContaining("messages.dir");

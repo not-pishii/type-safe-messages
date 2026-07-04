@@ -33,11 +33,13 @@ public sealed interface ContentProblem {
     record MalformedTemplate(Locale locale, String key, int position, String reason) implements ContentProblem {
         @Override
         public String describe() {
-            return "[" + locale.toLanguageTag() + "] key '" + key + "': malformed template at " + position + ": " + reason;
+            return "[" + locale.toLanguageTag() + "] key '" + key + "': malformed template at " + position + ": "
+                    + reason;
         }
     }
 
-    record UnknownPlaceholder(Locale locale, String key, String placeholder, Set<String> expected) implements ContentProblem {
+    record UnknownPlaceholder(Locale locale, String key, String placeholder, Set<String> expected)
+            implements ContentProblem {
         public UnknownPlaceholder {
             expected = Set.copyOf(expected);
         }
@@ -45,7 +47,7 @@ public sealed interface ContentProblem {
         @Override
         public String describe() {
             return "[" + locale.toLanguageTag() + "] key '" + key + "': unknown placeholder '{" + placeholder
-                + "}', expected one of " + expected;
+                    + "}', expected one of " + expected;
         }
     }
 }

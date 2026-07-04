@@ -20,8 +20,7 @@ import static javax.tools.Diagnostic.Kind.ERROR;
 
 final class ContractValidator {
 
-    private ContractValidator() {
-    }
+    private ContractValidator() {}
 
     static Optional<ContractModel> validate(TypeElement iface, ProcessingEnvironment env) {
         var messager = env.getMessager();
@@ -32,8 +31,10 @@ final class ContractValidator {
             return Optional.empty();
         }
         if (iface.getTypeParameters().size() != 1) {
-            messager.printMessage(ERROR,
-                "@Messages interface must declare exactly one type parameter (the render result type)", iface);
+            messager.printMessage(
+                    ERROR,
+                    "@Messages interface must declare exactly one type parameter (the render result type)",
+                    iface);
             return Optional.empty();
         }
         TypeParameterElement typeParam = iface.getTypeParameters().getFirst();
@@ -55,8 +56,10 @@ final class ContractValidator {
             }
             if (!(method.getReturnType() instanceof TypeVariable tv)
                     || !tv.asElement().equals(typeParam)) {
-                messager.printMessage(ERROR,
-                    "@Messages method must return the contract type parameter '" + typeParamName + "'", method);
+                messager.printMessage(
+                        ERROR,
+                        "@Messages method must return the contract type parameter '" + typeParamName + "'",
+                        method);
                 valid = false;
             }
             String name = method.getSimpleName().toString();
@@ -71,16 +74,17 @@ final class ContractValidator {
                 valid = false;
             }
             List<ContractModel.ParamModel> params = method.getParameters().stream()
-                .map(p -> new ContractModel.ParamModel(p.getSimpleName().toString(), p.asType()))
-                .toList();
+                    .map(p -> new ContractModel.ParamModel(p.getSimpleName().toString(), p.asType()))
+                    .toList();
             messages.add(new ContractModel.MessageModel(key, name, params));
         }
 
         if (!valid) {
             return Optional.empty();
         }
-        String packageName = env.getElementUtils().getPackageOf(iface).getQualifiedName().toString();
-        return Optional.of(new ContractModel(
-            packageName, iface.getSimpleName().toString(), typeParamName, List.copyOf(messages)));
+        String packageName =
+                env.getElementUtils().getPackageOf(iface).getQualifiedName().toString();
+        return Optional.of(
+                new ContractModel(packageName, iface.getSimpleName().toString(), typeParamName, List.copyOf(messages)));
     }
 }

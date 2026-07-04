@@ -11,9 +11,8 @@ class ContractGenerationTest {
 
     @Test
     void generatesContractMetaClass() {
-        Compilation compilation = javac()
-            .withProcessors(new MessagesProcessor())
-            .compile(JavaFileObjects.forSourceString("com.example.GameMessages", """
+        Compilation compilation = javac().withProcessors(new MessagesProcessor())
+                .compile(JavaFileObjects.forSourceString("com.example.GameMessages", """
                 package com.example;
 
                 import me.supcheg.messages.annotation.Key;
@@ -29,8 +28,9 @@ class ContractGenerationTest {
                 """));
 
         assertThat(compilation).succeeded();
-        var contents = assertThat(compilation).generatedSourceFile("com.example.GameMessagesContract")
-            .contentsAsUtf8String();
+        var contents = assertThat(compilation)
+                .generatedSourceFile("com.example.GameMessagesContract")
+                .contentsAsUtf8String();
         contents.contains("@ContractMeta(");
         contents.contains("key = \"player.balance\"");
         contents.contains("method = \"balance\"");

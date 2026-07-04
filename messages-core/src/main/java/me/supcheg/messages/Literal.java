@@ -1,4 +1,3 @@
 package me.supcheg.messages;
 
-public record Literal(String text) implements TemplatePart {
-}
+public record Literal(String text) implements TemplatePart {}

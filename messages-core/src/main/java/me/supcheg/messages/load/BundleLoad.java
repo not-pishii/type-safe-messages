@@ -6,8 +6,7 @@ import java.util.function.Function;
 /** Either-подобный результат загрузки контента. */
 public sealed interface BundleLoad<M> {
 
-    record Loaded<M>(M messages) implements BundleLoad<M> {
-    }
+    record Loaded<M>(M messages) implements BundleLoad<M> {}
 
     record Failed<M>(List<ContentProblem> problems) implements BundleLoad<M> {
         public Failed {
