@@ -5,7 +5,7 @@ plugins {
 mavenPublishing {
     publishToMavenCentral()
 
-    if (gradle.taskGraph.hasTask(tasks.publishToMavenLocal.name)) {
+    if (gradle.taskGraph.hasTask("publishToMavenCentral")) {
         signAllPublications()
     }
 
