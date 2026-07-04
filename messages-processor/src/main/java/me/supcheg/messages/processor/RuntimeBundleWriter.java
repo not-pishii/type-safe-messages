@@ -1,0 +1,67 @@
+package me.supcheg.messages.processor;
+
+import java.util.stream.Collectors;
+
+final class RuntimeBundleWriter {
+
+    private RuntimeBundleWriter() {
+    }
+
+    static String generatedName(BundleModel model) {
+        return model.contract().simpleName() + "RuntimeBundle";
+    }
+
+    static String write(BundleModel model) {
+        String contract = model.contract().simpleName();
+        String contractFqn = model.contract().packageName() + "." + contract;
+        String contractMetaName = contractFqn + "Contract";
+        String bundleName = generatedName(model);
+
+        String methods = model.contract().messages().stream()
+            .map(m -> """
+                        @Override
+                        public T %s(%s) {
+                            Function<String, Object> args = %s;
+                            return content.get("%s").render(renderer, args);
+                        }
+                """.formatted(
+                    m.methodName(),
+                    MethodSignatures.parameters(m),
+                    MethodSignatures.argumentsFunction(m),
+                    JavaStrings.escape(m.key())))
+            .collect(Collectors.joining("\n"));
+
+        return """
+            package %s;
+
+            import %s;
+
+            import java.nio.file.Path;
+            import java.util.Locale;
+            import java.util.Map;
+            import java.util.function.Function;
+            import me.supcheg.messages.MessageRenderer;
+            import me.supcheg.messages.MessageTemplate;
+            import me.supcheg.messages.load.BundleLoad;
+            import me.supcheg.messages.load.BundleLoader;
+
+            public final class %s {
+
+                public static <T> BundleLoad<%s<T>> load(Path dir, Locale locale, MessageRenderer<T> renderer) {
+                    return BundleLoader.load(dir, locale, "%s", %s.SHAPE)
+                        .map(content -> new Impl<>(content, renderer));
+                }
+
+                private record Impl<T>(Map<String, MessageTemplate> content, MessageRenderer<T> renderer)
+                        implements %s<T> {
+
+            %s    }
+
+                private %s() {
+                }
+            }
+            """.formatted(model.packageName(), contractFqn, bundleName, contract,
+                JavaStrings.escape(model.resources()), contractMetaName,
+                contract, methods, bundleName);
+    }
+}
