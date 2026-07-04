@@ -1,5 +1,6 @@
 plugins {
     `java-library`
+    alias(libs.plugins.spotless)
 }
 
 group = "me.supcheg"
@@ -28,3 +29,24 @@ testing {
         }
     }
 }
+
+spotless {
+    java {
+        palantirJavaFormat()
+
+        importOrder("", "javax|java", "\\#")
+        forbidWildcardImports()
+
+        targetExclude("build/**")
+    }
+
+    kotlinGradle {
+        ktfmt().kotlinlangStyle()
+
+        trimTrailingWhitespace()
+        endWithNewline()
+
+        targetExclude("build/**")
+    }
+}
+
