@@ -188,22 +188,15 @@ final class GameRuntimeBundleDecl {
 
 The processor still generates a fully typed bundle — `GameMessagesRuntimeBundle`
 — but instead of baking the translations in, it loads and validates them from a
-directory of `.properties` files at runtime, returning a sealed `BundleLoad<M>`
-(`Loaded`/`Failed`) so callers must handle both outcomes:
+directory of `.properties` files at runtime, returning a `Either`
+(`Error`/`Result`) so callers must handle both outcomes:
 
 ```java
-BundleLoad<GameMessages<String>> load =
-        GameMessagesRuntimeBundle.load(translationsDir, Locale.forLanguageTag("ru"), StringRenderer.instance());
-
-switch (load) {
-    case BundleLoad.Loaded<GameMessages<String>> loaded -> {
-        GameMessages<String> ru = loaded.messages();
-        System.out.println(ru.balance("Steve", 10));
-    }
-    case BundleLoad.Failed<GameMessages<String>> failed -> {
-        failed.problems().forEach(problem -> System.err.println(problem.describe()));
-    }
-}
+GameMessagesRuntimeBundle.load(Path.of(args[0]), Locale.of("ru"), StringRenderer.instance())
+        .fold(
+        problems -> problems.stream().map(p -> "PROBLEM: " + p.describe()),
+loaded -> Stream.of(loaded.playerJoined("Steve")))
+        .forEach(IO::println);
 ```
 
 Each `ContentProblem` pinpoints what went wrong (`MissingFile`, `UnreadableFile`,
@@ -236,12 +229,12 @@ The annotation processor, given `@Messages`-annotated contracts and
 
 ## Modules & requirements
 
-Requires **Java 21+**.
+Requires **Java 25+**.
 
 | Module | Purpose |
 |---|---|
 | `messages-annotations` | `@Messages`, `@MessageBundle`, `@Key`, `Resolution` — the annotations you apply to your own code. |
-| `messages-core` | Runtime support used by generated code: `MessageRenderer`, `StringRenderer`, `MessageTemplate`, and the runtime-loading types (`BundleLoad`, `BundleLoader`, `ContentProblem`). |
+| `messages-core` | Runtime support used by generated code: `MessageRenderer`, `StringRenderer`, `MessageTemplate`, and the runtime-loading types (`BundleLoader`, `ContentProblem`). |
 | `messages-processor` | The annotation processor that validates contracts/translations and generates bundle classes. |
 
 The `example/` modules in this repository (`example-contract`,
