@@ -1,6 +1,9 @@
 # type-safe-messages
 
-[![Build](https://github.com/Supcheg/type-safe-messages/actions/workflows/build.yml/badge.svg)](https://github.com/Supcheg/type-safe-messages/actions/workflows/build.yml)
+[![Maven Central](https://img.shields.io/maven-central/v/me.supcheg/messages-processor)](https://central.sonatype.com/artifact/me.supcheg/messages-processor)
+[![Javadoc](https://javadoc.io/badge2/me.supcheg/messages-processor/javadoc.svg)](https://javadoc.io/doc/me.supcheg/messages-processor)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Build](https://github.com/not-pishii/type-safe-messages/actions/workflows/build.yml/badge.svg)](https://github.com/not-pishii/type-safe-messages/actions/workflows/build.yml)
 
 Compile-time safe localized message formatting for Java.
 
@@ -50,9 +53,9 @@ in production.
 ```kotlin
 dependencies {
     // the contract module: annotation + generated-code runtime support
-    compileOnly("me.supcheg:messages-annotations:<version>")
-    implementation("me.supcheg:messages-core:<version>")
-    annotationProcessor("me.supcheg:messages-processor:<version>")
+    compileOnly("me.supcheg:messages-annotations:1.1.0")
+    implementation("me.supcheg:messages-core:1.1.0")
+    annotationProcessor("me.supcheg:messages-processor:1.1.0")
 }
 ```
 
