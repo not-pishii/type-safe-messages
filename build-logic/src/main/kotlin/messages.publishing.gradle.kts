@@ -5,10 +5,6 @@ plugins {
 mavenPublishing {
     publishToMavenCentral()
 
-    if (gradle.taskGraph.hasTask("publishToMavenCentral")) {
-        signAllPublications()
-    }
-
     coordinates("me.supcheg", project.name, version.toString())
 
     pom {
