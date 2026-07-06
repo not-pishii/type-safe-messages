@@ -15,6 +15,7 @@ dependencyResolutionManagement {
 rootProject.name = "type-safe-messages"
 
 include(
+    "messages-spi",
     "messages-annotations",
     "messages-core",
     "messages-processor",
