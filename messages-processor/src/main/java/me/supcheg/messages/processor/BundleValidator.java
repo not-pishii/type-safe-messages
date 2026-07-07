@@ -180,7 +180,7 @@ final class BundleValidator {
             if (customProvider) {
                 try {
                     snapshot = provider.templates(Locale.forLanguageTag(tag));
-                } catch (RuntimeException e) {
+                } catch (Throwable e) {
                     messager.printMessage(
                             ERROR,
                             "[" + tag + "] provider " + model.providerElement().getQualifiedName()
@@ -305,6 +305,9 @@ final class BundleValidator {
                     .printMessage(ERROR, "provider " + fqn + " threw during construction: " + cause.getMessage());
             env.getMessager().printMessage(NOTE, stackTraceOf(cause));
         } catch (ReflectiveOperationException e) {
+            env.getMessager().printMessage(ERROR, "cannot instantiate provider " + fqn + ": " + e.getMessage());
+            env.getMessager().printMessage(NOTE, stackTraceOf(e));
+        } catch (Throwable e) {
             env.getMessager().printMessage(ERROR, "cannot instantiate provider " + fqn + ": " + e.getMessage());
             env.getMessager().printMessage(NOTE, stackTraceOf(e));
         }
