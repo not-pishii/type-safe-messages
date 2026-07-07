@@ -53,9 +53,9 @@ in production.
 ```kotlin
 dependencies {
     // the contract module: annotation + generated-code runtime support
-    compileOnly("me.supcheg:messages-annotations:1.1.0")
-    implementation("me.supcheg:messages-core:1.1.0")
-    annotationProcessor("me.supcheg:messages-processor:1.1.0")
+    compileOnly("me.supcheg:messages-annotations:1.2.0")
+    implementation("me.supcheg:messages-core:1.2.0")
+    annotationProcessor("me.supcheg:messages-processor:1.2.0")
 }
 ```
 
@@ -222,6 +222,55 @@ The same `load(TemplateProvider, Locale, MessageRenderer)` overload works with a
 `TemplateProvider`, not just the default `Path`-backed one — pass an instance
 with its own state (e.g. a connection pool) instead of a directory.
 
+## Custom translation sources
+
+Both compile-time and runtime resolution can be backed by a translation source
+other than `.properties` files on disk — a JSON file bundled as a classpath
+resource, a database, a translation-management service — by implementing
+`me.supcheg.messages.spi.TemplateProvider` and pointing the bundle at it:
+
+```java
+package me.supcheg.messages.example;
+
+import me.supcheg.messages.annotation.MessageBundle;
+import me.supcheg.translations.JsonTemplateProvider;
+
+@MessageBundle(contract = GameMessages.class, locales = {"ru", "en"}, provider = JsonTemplateProvider.class)
+final class GameJsonBundle {
+}
+```
+
+`JsonTemplateProvider` here lives in its own module (e.g. `translations`) so it
+can be depended on separately from the module declaring the bundle. The
+consuming module needs the provider on the annotation processor's classpath to
+resolve it at compile time, and on its own compile classpath to reference the
+generated code that mentions it:
+
+```kotlin
+dependencies {
+    annotationProcessor(project(":translations"))
+    compileOnly(project(":translations"))
+}
+```
+
+For `Resolution.RUNTIME` bundles, add the provider as a regular runtime
+dependency too, since the generated `TemplateProvider`-based `load` overload
+references it at runtime, not just at compile time:
+
+```kotlin
+dependencies {
+    annotationProcessor(project(":translations"))
+    compileOnly(project(":translations"))
+    implementation(project(":translations"))
+}
+```
+
+A provider used at `COMPILE_TIME` must be a deterministic function of its own
+artifact — no database calls, no network, no wall-clock reads; for a live
+source (a database, a translation-management service), use `RUNTIME`
+resolution, or materialize the data into a resource file with a separate
+Gradle task feeding the provider's own module.
+
 ## How it works
 
 The annotation processor, given `@Messages`-annotated contracts and
@@ -255,6 +304,7 @@ Requires **Java 25+**.
 | `messages-annotations` | `@Messages`, `@MessageBundle`, `@Key`, `Resolution` — the annotations you apply to your own code. |
 | `messages-core` | Runtime support used by generated code: `MessageRenderer`, `StringRenderer`, `MessageTemplate`, and the runtime-loading types (`BundleLoader`, `ContentProblem`). |
 | `messages-processor` | The annotation processor that validates contracts/translations and generates bundle classes. |
+| `messages-spi` | The `TemplateProvider` SPI and the default `PropertiesProvider` implementation. Depend on this directly only if you're writing a custom provider. |
 
 The `example/` modules in this repository (`example-contract`,
 `example-bundle-main`, `example-bundle-alt`, `example-app`) are a compiling,
