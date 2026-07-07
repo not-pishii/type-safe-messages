@@ -12,8 +12,7 @@ class TemplateParserTest {
     void parsesLiteralsAndPlaceholders() {
         var result = TemplateParser.parse("k", "Привет, {player}! Монет: {coins}");
 
-        assertThat(result).isInstanceOfSatisfying(ParseResult.Parsed.class, parsed -> assertThat(
-                        parsed.template().parts())
+        assertThat(result.right()).hasValueSatisfying(template -> assertThat(template.parts())
                 .containsExactly(
                         new Literal("Привет, "),
                         new Placeholder("player"),
@@ -25,8 +24,7 @@ class TemplateParserTest {
     void escapedBraceIsLiteral() {
         var result = TemplateParser.parse("k", "json: \\{not a placeholder}");
 
-        assertThat(result).isInstanceOfSatisfying(ParseResult.Parsed.class, parsed -> assertThat(
-                        parsed.template().parts())
+        assertThat(result.right()).hasValueSatisfying(template -> assertThat(template.parts())
                 .containsExactly(new Literal("json: {not a placeholder}")));
     }
 
@@ -34,7 +32,7 @@ class TemplateParserTest {
     void unclosedBraceIsInvalid() {
         var result = TemplateParser.parse("k", "oops {player");
 
-        assertThat(result).isInstanceOfSatisfying(ParseResult.Invalid.class, invalid -> {
+        assertThat(result.left()).hasValueSatisfying(invalid -> {
             assertThat(invalid.position()).isEqualTo(5);
             assertThat(invalid.reason()).contains("unclosed");
         });
@@ -44,16 +42,15 @@ class TemplateParserTest {
     void escapedBackslashIsLiteral() {
         var result = TemplateParser.parse("k", "a\\\\b");
 
-        assertThat(result).isInstanceOfSatisfying(ParseResult.Parsed.class, parsed -> assertThat(
-                        parsed.template().parts())
-                .containsExactly(new Literal("a\\b")));
+        assertThat(result.right())
+                .hasValueSatisfying(template -> assertThat(template.parts()).containsExactly(new Literal("a\\b")));
     }
 
     @Test
     void invalidPlaceholderNameIsInvalid() {
         var result = TemplateParser.parse("k", "{1bad}");
 
-        assertThat(result).isInstanceOfSatisfying(ParseResult.Invalid.class, invalid -> {
+        assertThat(result.left()).hasValueSatisfying(invalid -> {
             assertThat(invalid.position()).isEqualTo(1);
             assertThat(invalid.reason()).contains("1bad");
         });
@@ -61,6 +58,6 @@ class TemplateParserTest {
 
     @Test
     void emptyTemplateIsValid() {
-        assertThat(TemplateParser.parse("k", "")).isInstanceOf(ParseResult.Parsed.class);
+        assertThat(TemplateParser.parse("k", "").right()).isPresent();
     }
 }

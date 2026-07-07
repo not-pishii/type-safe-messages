@@ -2,22 +2,26 @@ package me.supcheg.messages.load;
 
 import me.supcheg.messages.MessageTemplate;
 import me.supcheg.messages.Placeholder;
-import me.supcheg.messages.parse.ParseResult;
+import me.supcheg.messages.parse.InvalidTemplate;
 import me.supcheg.messages.parse.TemplateParser;
 import me.supcheg.messages.spi.PathResourceOpener;
 import me.supcheg.messages.spi.PropertiesProvider;
 import me.supcheg.messages.spi.SourceProblem;
 import me.supcheg.messages.spi.TemplateProvider;
 import me.supcheg.routine.Either;
+import me.supcheg.routine.EitherCollectors;
+import me.supcheg.routine.Pair;
 
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import static java.util.function.Predicate.not;
 
 /**
  * Loads and validates translations for a locale from any {@link TemplateProvider}, parsing raw
@@ -36,45 +40,58 @@ public final class BundleLoader {
     public static Either<List<ContentProblem>, Map<String, MessageTemplate>> load(
             TemplateProvider provider, Locale locale, ContractShape shape) {
         return provider.templates(locale)
-                .mapLeft(sourceProblems -> sourceProblems.stream()
-                        .map(BundleLoader::asContentProblem)
-                        .toList())
-                .flatMapRight(raw -> parseAndValidate(raw, locale, shape));
+                .mapLeft(sourceProblems ->
+                        sourceProblems.stream().map(BundleLoader::sourceProblem).toList())
+                .flatMapRight(unparsedTemplates -> parse(unparsedTemplates, locale, shape));
     }
 
-    private static ContentProblem asContentProblem(SourceProblem sp) {
-        return new ContentProblem.SourceProblem(sp.locale(), sp.description());
+    private static Either<List<ContentProblem>, Map<String, MessageTemplate>> parse(
+            Map<String, String> unparsedTemplates, Locale locale, ContractShape shape) {
+
+        return shape.messages().stream()
+                .map(message -> Optional.ofNullable(unparsedTemplates.get(message.key()))
+                        .map(unparsedTemplate -> TemplateParser.parse(message.key(), unparsedTemplate)
+                                .mapLeft(invalid -> List.of(malformedTemplate(locale, invalid)))
+                                .flatMapRight(template -> {
+                                    var validationResult = validate(template, message, locale);
+                                    return validationResult.isEmpty()
+                                            ? Either.right(template)
+                                            : Either.left(validationResult);
+                                })
+                                .mapRight(template -> Pair.pair(message.key(), template)))
+                        .orElseGet(() -> Either.left(List.of(missingKey(locale, message.key())))))
+                .collect(Collectors.collectingAndThen(
+                        EitherCollectors.groupingTo(
+                                Collectors.flatMapping(Collection::stream, Collectors.toUnmodifiableList()),
+                                Collectors.toUnmodifiableMap(Pair::left, Pair::right)),
+                        pair -> pair.left().isEmpty() ? Either.right(pair.right()) : Either.left(pair.left())));
     }
 
-    private static Either<List<ContentProblem>, Map<String, MessageTemplate>> parseAndValidate(
-            Map<String, String> raw, Locale locale, ContractShape shape) {
-        List<ContentProblem> problems = new ArrayList<>();
-        Map<String, MessageTemplate> content = new HashMap<>();
-        for (MessageShape message : shape.messages()) {
-            String rawTemplate = raw.get(message.key());
-            if (rawTemplate == null) {
-                problems.add(new ContentProblem.MissingKey(locale, message.key()));
-                continue;
-            }
-            switch (TemplateParser.parse(message.key(), rawTemplate)) {
-                case ParseResult.Invalid(String key, int position, String reason) ->
-                    problems.add(new ContentProblem.MalformedTemplate(locale, key, position, reason));
-                case ParseResult.Parsed(MessageTemplate template) -> {
-                    Set<String> expected = Set.copyOf(message.placeholders());
-                    Set<String> unknown = template.parts().stream()
-                            .filter(part -> part instanceof Placeholder)
-                            .map(part -> ((Placeholder) part).name())
-                            .filter(name -> !expected.contains(name))
-                            .collect(Collectors.toSet());
-                    if (unknown.isEmpty()) {
-                        content.put(message.key(), template);
-                    } else {
-                        unknown.forEach(name -> problems.add(
-                                new ContentProblem.UnknownPlaceholder(locale, message.key(), name, expected)));
-                    }
-                }
-            }
-        }
-        return problems.isEmpty() ? Either.right(Map.copyOf(content)) : Either.left(List.copyOf(problems));
+    private static List<ContentProblem> validate(MessageTemplate template, MessageShape message, Locale locale) {
+        var expectedPlaceholders = Set.copyOf(message.placeholders());
+
+        return template.parts().stream()
+                .filter(Placeholder.class::isInstance)
+                .map(Placeholder.class::cast)
+                .map(Placeholder::name)
+                .filter(not(expectedPlaceholders::contains))
+                .map(name -> unknownPlaceholder(locale, message.key(), name, expectedPlaceholders))
+                .toList();
+    }
+
+    private static ContentProblem sourceProblem(SourceProblem sourceProblem) {
+        return new ContentProblem.SourceProblem(sourceProblem.locale(), sourceProblem.description());
+    }
+
+    private static ContentProblem unknownPlaceholder(Locale locale, String key, String name, Set<String> expected) {
+        return new ContentProblem.UnknownPlaceholder(locale, key, name, expected);
+    }
+
+    private static ContentProblem missingKey(Locale locale, String key) {
+        return new ContentProblem.MissingKey(locale, key);
+    }
+
+    private static ContentProblem malformedTemplate(Locale locale, InvalidTemplate template) {
+        return new ContentProblem.MalformedTemplate(locale, template.key(), template.position(), template.reason());
     }
 }

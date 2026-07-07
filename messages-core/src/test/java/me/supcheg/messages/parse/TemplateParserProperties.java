@@ -19,9 +19,8 @@ class TemplateParserProperties {
 
         var result = TemplateParser.parse("k", text);
 
-        assertThat(result).isInstanceOfSatisfying(ParseResult.Parsed.class, parsed -> assertThat(
-                        parsed.template().parts())
-                .containsExactly(new Literal(text)));
+        assertThat(result.right())
+                .hasValueSatisfying(template -> assertThat(template.parts()).containsExactly(new Literal(text)));
     }
 
     @Property
@@ -32,8 +31,8 @@ class TemplateParserProperties {
 
         var result = TemplateParser.parse("k", "pre {" + name + "} post");
 
-        assertThat(result).isInstanceOfSatisfying(ParseResult.Parsed.class, parsed -> assertThat(
-                        parsed.template().render(StringRenderer.instance(), n -> value))
-                .isEqualTo("pre " + value + " post"));
+        assertThat(result.right())
+                .hasValueSatisfying(template -> assertThat(template.render(StringRenderer.instance(), _ -> value))
+                        .isEqualTo("pre " + value + " post"));
     }
 }

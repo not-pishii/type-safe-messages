@@ -6,7 +6,6 @@ import me.supcheg.messages.annotation.MessageBundle;
 import me.supcheg.messages.annotation.meta.ContractMeta;
 import me.supcheg.messages.annotation.meta.MessageMeta;
 import me.supcheg.messages.annotation.meta.ParamMeta;
-import me.supcheg.messages.parse.ParseResult;
 import me.supcheg.messages.parse.TemplateParser;
 import me.supcheg.messages.spi.PathResourceOpener;
 import me.supcheg.messages.spi.PropertiesProvider;
@@ -212,13 +211,14 @@ final class BundleValidator {
                         .map(ContractModel.ParamModel::name)
                         .collect(Collectors.toSet());
                 switch (TemplateParser.parse(message.key(), raw)) {
-                    case ParseResult.Invalid(String key, int position, String reason) -> {
+                    case Either.Left(var error) -> {
                         messager.printMessage(
                                 ERROR,
-                                "[" + tag + "] key '" + key + "': malformed template at " + position + ": " + reason);
+                                "[" + tag + "] key '" + error.key() + "': malformed template at " + error.position()
+                                        + ": " + error.reason());
                         valid = false;
                     }
-                    case ParseResult.Parsed(MessageTemplate template) -> {
+                    case Either.Right(var template) -> {
                         Set<String> used = template.parts().stream()
                                 .filter(p -> p instanceof Placeholder)
                                 .map(p -> ((Placeholder) p).name())
