@@ -47,32 +47,34 @@ public final class MessagesProcessor extends AbstractProcessor {
     }
 
     private void processBundle(TypeElement bundleElement) {
-        String dirOption = processingEnv.getOptions().get(OPTION_MESSAGES_DIR);
-        if (dirOption == null) {
-            processingEnv
-                    .getMessager()
-                    .printMessage(
-                            Diagnostic.Kind.ERROR,
-                            "@MessageBundle requires the 'messages.dir' processor option"
-                                    + " (pass -Amessages.dir=<path> or apply the messages bundle convention plugin)",
-                            bundleElement);
-            return;
-        }
-        BundleValidator.resolve(bundleElement, processingEnv)
-                .ifPresent(model -> BundleValidator.validate(model, java.nio.file.Path.of(dirOption), processingEnv)
-                        .ifPresent(byLocale -> {
-                            String source =
-                                    switch (model.resolution()) {
-                                        case COMPILE_TIME -> CompileTimeBundleWriter.write(model, byLocale);
-                                        case RUNTIME -> RuntimeBundleWriter.write(model);
-                                    };
-                            String simpleName =
-                                    switch (model.resolution()) {
-                                        case COMPILE_TIME -> CompileTimeBundleWriter.generatedName(model);
-                                        case RUNTIME -> RuntimeBundleWriter.generatedName(model);
-                                    };
-                            writeSource(model.packageName() + "." + simpleName, source, bundleElement);
-                        }));
+        BundleValidator.resolve(bundleElement, processingEnv).ifPresent(model -> {
+            boolean usesDefaultProvider = BundleValidator.isDefaultProvider(model.providerElement(), processingEnv);
+            String dirOption = processingEnv.getOptions().get(OPTION_MESSAGES_DIR);
+            if (usesDefaultProvider && dirOption == null) {
+                processingEnv
+                        .getMessager()
+                        .printMessage(
+                                Diagnostic.Kind.ERROR,
+                                "@MessageBundle requires the 'messages.dir' processor option"
+                                        + " (pass -Amessages.dir=<path> or apply the messages bundle convention plugin)",
+                                bundleElement);
+                return;
+            }
+            java.nio.file.Path messagesDir = dirOption != null ? java.nio.file.Path.of(dirOption) : null;
+            BundleValidator.validate(model, messagesDir, processingEnv).ifPresent(byLocale -> {
+                String source =
+                        switch (model.resolution()) {
+                            case COMPILE_TIME -> CompileTimeBundleWriter.write(model, byLocale);
+                            case RUNTIME -> RuntimeBundleWriter.write(model);
+                        };
+                String simpleName =
+                        switch (model.resolution()) {
+                            case COMPILE_TIME -> CompileTimeBundleWriter.generatedName(model);
+                            case RUNTIME -> RuntimeBundleWriter.generatedName(model);
+                        };
+                writeSource(model.packageName() + "." + simpleName, source, bundleElement);
+            });
+        });
     }
 
     private void writeSource(String fqn, String source, Element origin) {

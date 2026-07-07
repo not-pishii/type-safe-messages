@@ -275,7 +275,7 @@ final class BundleValidator {
         }
     }
 
-    private static boolean isDefaultProvider(TypeElement providerElement, ProcessingEnvironment env) {
+    static boolean isDefaultProvider(TypeElement providerElement, ProcessingEnvironment env) {
         TypeElement defaultElement = env.getElementUtils().getTypeElement("me.supcheg.messages.spi.PropertiesProvider");
         return defaultElement != null
                 && env.getTypeUtils().isSameType(providerElement.asType(), defaultElement.asType());
