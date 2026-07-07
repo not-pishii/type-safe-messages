@@ -3,13 +3,16 @@ package me.supcheg.messages.example.runtimedefault;
 import me.supcheg.messages.MessageRenderer;
 import me.supcheg.messages.example.GameMessages;
 import me.supcheg.messages.example.GameMessagesSource;
+import me.supcheg.messages.load.ContentProblem;
 import me.supcheg.messages.spi.PropertiesProvider;
-import me.supcheg.messages.spi.TemplateProvider;
+import me.supcheg.routine.EitherCollectors;
+import me.supcheg.routine.Pair;
 
-import java.util.LinkedHashMap;
+import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public final class RuntimeDefaultGameMessagesSource implements GameMessagesSource {
 
@@ -17,14 +20,19 @@ public final class RuntimeDefaultGameMessagesSource implements GameMessagesSourc
 
     @Override
     public Map<Locale, GameMessages<String>> load(MessageRenderer<String> renderer) {
-        TemplateProvider provider = new PropertiesProvider("messages", new ClasspathResourceOpener());
-        Map<Locale, GameMessages<String>> byLocale = new LinkedHashMap<>();
-        for (Locale locale : LOCALES) {
-            GameMessagesRuntimeBundle.load(provider, locale, renderer)
-                    .accept(
-                            problems -> problems.forEach(p -> System.err.println("PROBLEM: " + p.describe())),
-                            messages -> byLocale.put(locale, messages));
-        }
-        return byLocale;
+        var provider = new PropertiesProvider("messages", new ClasspathResourceOpener());
+
+        var result = LOCALES.stream()
+                .map(locale -> GameMessagesRuntimeBundle.load(provider, locale, renderer)
+                        .mapRight(messages -> Pair.pair(locale, messages)))
+                .collect(EitherCollectors.groupingTo(
+                        Collectors.flatMapping(Collection::stream, Collectors.groupingBy(ContentProblem::locale)),
+                        Collectors.toUnmodifiableMap(Pair::left, Pair::right)));
+
+        result.left()
+                .forEach((locale, problem) -> System.err.printf(
+                        "PROBLEM(%s): %s",
+                        locale.toLanguageTag(), problem.getFirst().describe()));
+        return result.right();
     }
 }
