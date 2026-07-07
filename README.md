@@ -310,9 +310,10 @@ Requires **Java 25+**.
 | `messages-spi` | The `TemplateProvider` SPI and the default `PropertiesProvider` implementation. Depend on this directly only if you're writing a custom provider. |
 
 The `example/` modules in this repository (`example-contract`,
-`example-bundle-main`, `example-bundle-alt`, `example-app`) are a compiling,
-tested, end-to-end demonstration of the whole flow and are the source of every
-snippet above.
+`example-bundle-main`, `example-bundle-alt`, `example-translations`,
+`example-bundle-provider`, `example-app`) are a compiling, tested, end-to-end
+demonstration of the whole flow — including a custom `TemplateProvider` — and
+are the source of every snippet above.
 
 ## License
 
