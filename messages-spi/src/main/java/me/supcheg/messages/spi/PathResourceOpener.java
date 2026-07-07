@@ -2,7 +2,6 @@ package me.supcheg.messages.spi;
 
 import java.io.IOException;
 import java.io.Reader;
-import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -21,15 +20,10 @@ public final class PathResourceOpener implements ResourceOpener {
     }
 
     @Override
-    public Optional<Reader> open(String fileName) {
-        Path file = dir.resolve(fileName);
-        if (!Files.isRegularFile(file)) {
-            return Optional.empty();
-        }
-        try {
-            return Optional.of(Files.newBufferedReader(file, StandardCharsets.UTF_8));
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
+    public Optional<Reader> open(String fileName) throws IOException {
+        var file = dir.resolve(fileName);
+        return Files.isRegularFile(file)
+                ? Optional.of(Files.newBufferedReader(file, StandardCharsets.UTF_8))
+                : Optional.empty();
     }
 }

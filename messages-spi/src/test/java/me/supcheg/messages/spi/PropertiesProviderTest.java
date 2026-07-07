@@ -5,7 +5,6 @@ import org.junit.jupiter.api.Test;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
-import java.io.UncheckedIOException;
 import java.util.Locale;
 import java.util.Optional;
 
@@ -41,9 +40,9 @@ class PropertiesProviderTest {
     }
 
     @Test
-    void reportsSourceProblemOnIoFailure() throws IOException {
+    void reportsSourceProblemOnIoFailure() {
         ResourceOpener opener = fileName -> {
-            throw new UncheckedIOException(new IOException("boom"));
+            throw new IOException("boom");
         };
         PropertiesProvider provider = new PropertiesProvider("messages", opener);
 

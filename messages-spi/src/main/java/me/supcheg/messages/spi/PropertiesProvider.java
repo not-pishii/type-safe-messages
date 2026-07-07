@@ -4,7 +4,6 @@ import me.supcheg.routine.Either;
 
 import java.io.IOException;
 import java.io.Reader;
-import java.io.UncheckedIOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -32,9 +31,8 @@ public final class PropertiesProvider implements TemplateProvider {
         Optional<Reader> reader;
         try {
             reader = opener.open(fileName);
-        } catch (UncheckedIOException e) {
-            return Either.left(List.of(new SourceProblem(
-                    locale, "cannot read " + fileName + ": " + e.getCause().getMessage())));
+        } catch (IOException e) {
+            return Either.left(List.of(new SourceProblem(locale, "cannot read " + fileName + ": " + e.getMessage())));
         }
         if (reader.isEmpty()) {
             return Either.left(List.of(new SourceProblem(locale, "resource not found: " + fileName)));
