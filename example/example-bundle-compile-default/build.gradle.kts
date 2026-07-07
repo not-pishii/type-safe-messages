@@ -4,6 +4,6 @@ plugins {
 }
 
 dependencies {
-    api(project(":example:example-contract"))
+    api(project(":example:messages-declaration"))
     annotationProcessor(project(":messages-processor"))
 }
