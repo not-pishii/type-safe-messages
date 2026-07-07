@@ -43,34 +43,51 @@ dependencies {
     add(runtimeCustomRuntimeClasspath.name, project(":example:example-bundle-runtime-custom"))
 }
 
-tasks.register<JavaExec>("runCompileDefault") {
-    group = "example matrix"
-    description =
-        "Runs the app with the COMPILE_TIME/default-provider bundle on the runtime classpath only."
-    mainClass = application.mainClass
-    classpath = sourceSets.main.get().output + compileDefaultRuntimeClasspath
-}
+tasks {
+    val runCompileDefault =
+        register<JavaExec>("runCompileDefault") {
+            group = "example matrix"
+            description =
+                "Runs the app with the COMPILE_TIME/default-provider bundle on the runtime classpath only."
+            mainClass = application.mainClass
+            classpath = sourceSets.main.get().output + compileDefaultRuntimeClasspath
+        }
 
-tasks.register<JavaExec>("runCompileCustom") {
-    group = "example matrix"
-    description =
-        "Runs the app with the COMPILE_TIME/custom-provider bundle on the runtime classpath only."
-    mainClass = application.mainClass
-    classpath = sourceSets.main.get().output + compileCustomRuntimeClasspath
-}
+    val runCompileCustom =
+        register<JavaExec>("runCompileCustom") {
+            group = "example matrix"
+            description =
+                "Runs the app with the COMPILE_TIME/custom-provider bundle on the runtime classpath only."
+            mainClass = application.mainClass
+            classpath = sourceSets.main.get().output + compileCustomRuntimeClasspath
+        }
 
-tasks.register<JavaExec>("runRuntimeDefault") {
-    group = "example matrix"
-    description =
-        "Runs the app with the RUNTIME/default-provider bundle on the runtime classpath only."
-    mainClass = application.mainClass
-    classpath = sourceSets.main.get().output + runtimeDefaultRuntimeClasspath
-}
+    val runRuntimeDefault =
+        register<JavaExec>("runRuntimeDefault") {
+            group = "example matrix"
+            description =
+                "Runs the app with the RUNTIME/default-provider bundle on the runtime classpath only."
+            mainClass = application.mainClass
+            classpath = sourceSets.main.get().output + runtimeDefaultRuntimeClasspath
+        }
 
-tasks.register<JavaExec>("runRuntimeCustom") {
-    group = "example matrix"
-    description =
-        "Runs the app with the RUNTIME/custom-provider bundle on the runtime classpath only."
-    mainClass = application.mainClass
-    classpath = sourceSets.main.get().output + runtimeCustomRuntimeClasspath
+    val runRuntimeCustom =
+        register<JavaExec>("runRuntimeCustom") {
+            group = "example matrix"
+            description =
+                "Runs the app with the RUNTIME/custom-provider bundle on the runtime classpath only."
+            mainClass = application.mainClass
+            classpath = sourceSets.main.get().output + runtimeCustomRuntimeClasspath
+        }
+
+    register("runMatrix") {
+        group = "example matrix"
+        description = "Runs bundle variants"
+        dependsOn(
+            runCompileDefault,
+            runCompileCustom,
+            runRuntimeDefault,
+            runRuntimeCustom,
+        )
+    }
 }
