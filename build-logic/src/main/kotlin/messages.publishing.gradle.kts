@@ -3,14 +3,14 @@ plugins {
 }
 
 mavenPublishing {
-    publishToMavenCentral()
+    publishToMavenCentral(automaticRelease = true)
 
     coordinates("me.supcheg", project.name, version.toString())
 
     pom {
         name = project.name
         description = "Type-safe localized message formatting for Java"
-        url = "https://github.com/Pupcheg/type-safe-messages"
+        url = "https://github.com/not-pishii/type-safe-messages"
         licenses {
             license {
                 name = "MIT License"
@@ -19,15 +19,15 @@ mavenPublishing {
         }
         developers {
             developer {
-                id = "Pupcheg"
-                name = "Supcheg"
-                url = "https://github.com/Pupcheg"
+                id = "not-pishii"
+                name = "Egor Pishii"
+                url = "https://github.com/not-pishii"
             }
         }
         scm {
-            url = "https://github.com/Pupcheg/type-safe-messages"
-            connection = "scm:git:git://github.com/Pupcheg/type-safe-messages.git"
-            developerConnection = "scm:git:ssh://git@github.com/Pupcheg/type-safe-messages.git"
+            url = "https://github.com/not-pishii/type-safe-messages"
+            connection = "scm:git:git://github.com/not-pishii/type-safe-messages.git"
+            developerConnection = "scm:git:ssh://git@github.com/not-pishii/type-safe-messages.git"
         }
     }
 }
