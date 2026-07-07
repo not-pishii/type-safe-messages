@@ -1,6 +1,10 @@
 package me.supcheg.messages.load;
 
 import me.supcheg.messages.StringRenderer;
+import me.supcheg.messages.spi.PathResourceOpener;
+import me.supcheg.messages.spi.PropertiesProvider;
+import me.supcheg.messages.spi.TemplateProvider;
+import me.supcheg.routine.Either;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -42,7 +46,7 @@ class BundleLoaderTest {
 
         assertThat(result.left())
                 .hasValueSatisfying(problems ->
-                        assertThat(problems).singleElement().isInstanceOf(ContentProblem.MissingFile.class));
+                        assertThat(problems).singleElement().isInstanceOf(ContentProblem.SourceProblem.class));
     }
 
     @Test
@@ -72,5 +76,23 @@ class BundleLoaderTest {
                     assertThat(problem.key()).isEqualTo("playerJoined");
                     assertThat(problem.reason()).contains("unclosed");
                 }));
+    }
+
+    @Test
+    void pathOverloadAndProviderOverloadAgreeOnValidInput() throws IOException {
+        Files.writeString(dir.resolve("messages_ru.properties"), """
+            playerJoined=Игрок {player} зашёл
+            balance=У {player} на счету {coins}
+            """);
+
+        Either<List<ContentProblem>, Map<String, me.supcheg.messages.MessageTemplate>> viaPath =
+                BundleLoader.load(dir, Locale.of("ru"), "messages", SHAPE);
+
+        TemplateProvider provider = new PropertiesProvider("messages", new PathResourceOpener(dir));
+        Either<List<ContentProblem>, Map<String, me.supcheg.messages.MessageTemplate>> viaProvider =
+                BundleLoader.load(provider, Locale.of("ru"), SHAPE);
+
+        assertThat(viaProvider.right().isPresent()).isEqualTo(viaPath.right().isPresent());
+        assertThat(viaProvider.right()).isEqualTo(viaPath.right());
     }
 }

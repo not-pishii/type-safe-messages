@@ -202,7 +202,7 @@ loaded -> Stream.of(loaded.playerJoined("Steve")))
         .forEach(IO::println);
 ```
 
-Each `ContentProblem` pinpoints what went wrong (`MissingFile`, `UnreadableFile`,
+Each `ContentProblem` pinpoints what went wrong (`SourceProblem`,
 `MissingKey`, `MalformedTemplate`, `UnknownPlaceholder`) with the offending
 locale, key, and reason — no more guessing why a translation didn't load.
 

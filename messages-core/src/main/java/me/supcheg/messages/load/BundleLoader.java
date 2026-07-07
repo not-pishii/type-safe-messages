@@ -4,50 +4,56 @@ import me.supcheg.messages.MessageTemplate;
 import me.supcheg.messages.Placeholder;
 import me.supcheg.messages.parse.ParseResult;
 import me.supcheg.messages.parse.TemplateParser;
+import me.supcheg.messages.spi.PathResourceOpener;
+import me.supcheg.messages.spi.PropertiesProvider;
+import me.supcheg.messages.spi.SourceProblem;
+import me.supcheg.messages.spi.TemplateProvider;
 import me.supcheg.routine.Either;
 
-import java.io.IOException;
-import java.io.Reader;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Properties;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-/** Загрузка и валидация переводов из properties-файла. Повторяет проверки процессора. */
+/**
+ * Loads and validates translations for a locale from any {@link TemplateProvider}, parsing raw
+ * templates and checking placeholders against a {@link ContractShape} identically for every
+ * source.
+ */
 public final class BundleLoader {
 
     private BundleLoader() {}
 
     public static Either<List<ContentProblem>, Map<String, MessageTemplate>> load(
             Path dir, Locale locale, String baseName, ContractShape shape) {
-        String fileName = baseName + "_" + locale.toLanguageTag().replace('-', '_') + ".properties";
-        Path file = dir.resolve(fileName);
-        if (!Files.isRegularFile(file)) {
-            return Either.left(List.of(new ContentProblem.MissingFile(locale, file.toString())));
-        }
-        Properties properties = new Properties();
-        try (Reader reader = Files.newBufferedReader(file, StandardCharsets.UTF_8)) {
-            properties.load(reader);
-        } catch (IOException e) {
-            return Either.left(List.of(new ContentProblem.UnreadableFile(locale, file.toString(), e.getMessage())));
-        }
+        TemplateProvider provider = new PropertiesProvider(baseName, new PathResourceOpener(dir));
+        return load(provider, locale, shape);
+    }
 
+    public static Either<List<ContentProblem>, Map<String, MessageTemplate>> load(
+            TemplateProvider provider, Locale locale, ContractShape shape) {
+        Either<List<SourceProblem>, Map<String, String>> snapshot = provider.templates(locale);
+        return snapshot.mapLeft(sourceProblems -> sourceProblems.stream()
+                        .<ContentProblem>map(p -> new ContentProblem.SourceProblem(p.locale(), p.description()))
+                        .collect(Collectors.toUnmodifiableList()))
+                .flatMapRight(raw -> parseAndValidate(raw, locale, shape));
+    }
+
+    private static Either<List<ContentProblem>, Map<String, MessageTemplate>> parseAndValidate(
+            Map<String, String> raw, Locale locale, ContractShape shape) {
         List<ContentProblem> problems = new ArrayList<>();
         Map<String, MessageTemplate> content = new HashMap<>();
         for (MessageShape message : shape.messages()) {
-            String raw = properties.getProperty(message.key());
-            if (raw == null) {
+            String rawTemplate = raw.get(message.key());
+            if (rawTemplate == null) {
                 problems.add(new ContentProblem.MissingKey(locale, message.key()));
                 continue;
             }
-            switch (TemplateParser.parse(message.key(), raw)) {
+            switch (TemplateParser.parse(message.key(), rawTemplate)) {
                 case ParseResult.Invalid(String key, int position, String reason) ->
                     problems.add(new ContentProblem.MalformedTemplate(locale, key, position, reason));
                 case ParseResult.Parsed(MessageTemplate template) -> {
