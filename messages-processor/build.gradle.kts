@@ -29,6 +29,7 @@ testing {
 tasks {
     functionalTest {
         dependsOn(
+            ":messages-spi:publishAllPublicationsToTestRepoRepository",
             ":messages-annotations:publishAllPublicationsToTestRepoRepository",
             ":messages-core:publishAllPublicationsToTestRepoRepository",
             ":messages-processor:publishAllPublicationsToTestRepoRepository",
