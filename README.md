@@ -206,6 +206,22 @@ Each `ContentProblem` pinpoints what went wrong (`SourceProblem`,
 `MissingKey`, `MalformedTemplate`, `UnknownPlaceholder`) with the offending
 locale, key, and reason — no more guessing why a translation didn't load.
 
+Because each snapshot is immutable, a live-reload pattern is just: call `load`
+again and swap the reference behind an `AtomicReference`, e.g.:
+
+```java
+AtomicReference<GameMessages<String>> current = new AtomicReference<>(initial);
+// later, e.g. on a file-watch event or admin command:
+GameMessagesRuntimeBundle.load(dir, locale, StringRenderer.instance())
+        .fold(
+        problems -> { problems.forEach(p -> System.out.println("PROBLEM: " + p.describe())); return null; },
+        loaded -> { current.set(loaded); return null; });
+```
+
+The same `load(TemplateProvider, Locale, MessageRenderer)` overload works with any
+`TemplateProvider`, not just the default `Path`-backed one — pass an instance
+with its own state (e.g. a connection pool) instead of a directory.
+
 ## How it works
 
 The annotation processor, given `@Messages`-annotated contracts and
