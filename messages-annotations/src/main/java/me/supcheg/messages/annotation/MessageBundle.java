@@ -1,5 +1,8 @@
 package me.supcheg.messages.annotation;
 
+import me.supcheg.messages.spi.PropertiesProvider;
+import me.supcheg.messages.spi.TemplateProvider;
+
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -16,4 +19,6 @@ public @interface MessageBundle {
     Resolution resolution() default Resolution.COMPILE_TIME;
 
     String resources() default "messages";
+
+    Class<? extends TemplateProvider> provider() default PropertiesProvider.class;
 }

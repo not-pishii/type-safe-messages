@@ -9,17 +9,10 @@ public sealed interface ContentProblem {
 
     String describe();
 
-    record MissingFile(Locale locale, String path) implements ContentProblem {
+    record SourceProblem(Locale locale, String description) implements ContentProblem {
         @Override
         public String describe() {
-            return "[" + locale.toLanguageTag() + "] translations file not found: " + path;
-        }
-    }
-
-    record UnreadableFile(Locale locale, String path, String error) implements ContentProblem {
-        @Override
-        public String describe() {
-            return "[" + locale.toLanguageTag() + "] cannot read " + path + ": " + error;
+            return "[" + locale.toLanguageTag() + "] " + description;
         }
     }
 

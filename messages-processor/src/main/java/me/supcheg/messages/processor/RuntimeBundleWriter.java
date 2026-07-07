@@ -45,11 +45,17 @@ final class RuntimeBundleWriter {
             import me.supcheg.messages.MessageTemplate;
             import me.supcheg.messages.load.BundleLoader;
             import me.supcheg.messages.load.ContentProblem;
+            import me.supcheg.messages.spi.TemplateProvider;
 
             public final class %s {
 
                 public static <T> Either<List<ContentProblem>, %s<T>> load(Path dir, Locale locale, MessageRenderer<T> renderer) {
                     return BundleLoader.load(dir, locale, "%s", %s.SHAPE)
+                        .mapRight(content -> new Impl<>(content, renderer));
+                }
+
+                public static <T> Either<List<ContentProblem>, %s<T>> load(TemplateProvider provider, Locale locale, MessageRenderer<T> renderer) {
+                    return BundleLoader.load(provider, locale, %s.SHAPE)
                         .mapRight(content -> new Impl<>(content, renderer));
                 }
 
@@ -67,6 +73,8 @@ final class RuntimeBundleWriter {
                         bundleName,
                         contract,
                         JavaStrings.escape(model.resources()),
+                        contractMetaName,
+                        contract,
                         contractMetaName,
                         contract,
                         methods,

@@ -11,4 +11,5 @@ record BundleModel(
         List<String> localeTags,
         Resolution resolution,
         String resources,
-        String packageName) {}
+        String packageName,
+        TypeElement providerElement) {}

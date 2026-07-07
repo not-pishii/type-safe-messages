@@ -10,6 +10,7 @@ final class TestProject {
 
     static final String REPO = System.getProperty("test.repo");
     static final String VERSION = System.getProperty("test.version");
+    static final String ROUTINE_VERSION = "1.0.0";
 
     private final Path root;
 
@@ -85,6 +86,67 @@ final class TestProject {
                 }
             }
             """);
+    }
+
+    TestProject withJsonTranslationsProvider() {
+        write("translations/build.gradle.kts", """
+            plugins { `java-library` }
+            dependencies {
+                implementation("me.supcheg:messages-spi:%s")
+                implementation("me.supcheg:routine:%s")
+            }
+            """.formatted(VERSION, ROUTINE_VERSION));
+        write("translations/src/main/java/translations/JsonTemplateProvider.java", """
+            package translations;
+
+            import me.supcheg.messages.spi.SourceProblem;
+            import me.supcheg.messages.spi.TemplateProvider;
+            import me.supcheg.routine.Either;
+
+            import java.io.IOException;
+            import java.io.InputStream;
+            import java.io.UncheckedIOException;
+            import java.nio.charset.StandardCharsets;
+            import java.util.HashMap;
+            import java.util.List;
+            import java.util.Locale;
+            import java.util.Map;
+            import java.util.regex.Matcher;
+            import java.util.regex.Pattern;
+
+            /** Minimal hand-rolled JSON object reader ("key": "value" pairs only) -- enough to
+             *  prove a non-properties source works; not a general JSON parser. */
+            public final class JsonTemplateProvider implements TemplateProvider {
+
+                private static final Pattern ENTRY = Pattern.compile("\\"(.+?)\\"\\s*:\\s*\\"(.+?)\\"");
+
+                @Override
+                public Either<List<SourceProblem>, Map<String, String>> templates(Locale locale) {
+                    String fileName = "translations/messages_" + locale.toLanguageTag().replace('-', '_') + ".json";
+                    try (InputStream in = JsonTemplateProvider.class.getClassLoader().getResourceAsStream(fileName)) {
+                        if (in == null) {
+                            return Either.left(List.of(new SourceProblem(locale, "classpath:/" + fileName + " not found")));
+                        }
+                        String json = new String(in.readAllBytes(), StandardCharsets.UTF_8);
+                        Map<String, String> result = new HashMap<>();
+                        Matcher m = ENTRY.matcher(json);
+                        while (m.find()) {
+                            result.put(m.group(1), m.group(2));
+                        }
+                        return Either.right(Map.copyOf(result));
+                    } catch (IOException e) {
+                        throw new UncheckedIOException(e);
+                    }
+                }
+            }
+            """);
+        write("translations/src/main/resources/translations/messages_ru.json", """
+            {
+              "playerJoined": "Игрок {player} зашёл",
+              "balance": "У {player} на счету {coins}"
+            }
+            """);
+        return this;
     }
 
     TestProject write(String relativePath, String content) {

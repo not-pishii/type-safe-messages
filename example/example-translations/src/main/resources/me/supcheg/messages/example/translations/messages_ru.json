@@ -1,0 +1,4 @@
+{
+  "playerJoined": "{player} подключился к игре",
+  "balance": "Счёт игрока {player}: {coins} монет"
+}

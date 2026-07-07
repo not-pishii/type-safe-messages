@@ -4,7 +4,7 @@ plugins {
 }
 
 dependencies {
-    api(libs.routine)
+    api(project(":messages-spi"))
 }
 
 testing {
