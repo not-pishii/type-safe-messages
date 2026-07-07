@@ -16,10 +16,14 @@ import me.supcheg.routine.Either;
 
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.ExecutableElement;
+import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.MirroredTypeException;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.ElementFilter;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -32,6 +36,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static javax.tools.Diagnostic.Kind.ERROR;
+import static javax.tools.Diagnostic.Kind.NOTE;
 import static javax.tools.Diagnostic.Kind.WARNING;
 
 final class BundleValidator {
@@ -64,6 +69,38 @@ final class BundleValidator {
         if (providerElement == null) {
             env.getMessager().printMessage(ERROR, "cannot resolve provider type", bundleElement);
             return Optional.empty();
+        }
+
+        if (!isDefaultProvider(providerElement, env)) {
+            if (!annotation.resources().equals("messages")) {
+                env.getMessager()
+                        .printMessage(
+                                ERROR,
+                                "@MessageBundle.resources() has no effect together with a custom provider() ("
+                                        + providerElement.getQualifiedName() + "); remove one of them",
+                                bundleElement);
+                return Optional.empty();
+            }
+            if (providerElement.getModifiers().contains(Modifier.ABSTRACT)) {
+                env.getMessager()
+                        .printMessage(
+                                ERROR,
+                                "provider " + providerElement.getQualifiedName() + " must not be abstract",
+                                bundleElement);
+                return Optional.empty();
+            }
+            boolean hasPublicNoArgConstructor =
+                    ElementFilter.constructorsIn(providerElement.getEnclosedElements()).stream()
+                            .anyMatch(c -> c.getParameters().isEmpty()
+                                    && c.getModifiers().contains(Modifier.PUBLIC));
+            if (!hasPublicNoArgConstructor) {
+                env.getMessager()
+                        .printMessage(
+                                ERROR,
+                                "provider " + providerElement.getQualifiedName() + " needs a public no-arg constructor",
+                                bundleElement);
+                return Optional.empty();
+            }
         }
 
         String packageName = env.getElementUtils()
@@ -126,10 +163,35 @@ final class BundleValidator {
         boolean valid = true;
         Map<String, Map<String, MessageTemplate>> byLocale = new LinkedHashMap<>();
 
-        TemplateProvider provider = new PropertiesProvider(model.resources(), new PathResourceOpener(messagesDir));
+        boolean customProvider = !isDefaultProvider(model.providerElement(), env);
+        TemplateProvider provider;
+        if (customProvider) {
+            Optional<TemplateProvider> loaded = loadCustomProvider(model.providerElement(), env);
+            if (loaded.isEmpty()) {
+                return Optional.empty();
+            }
+            provider = loaded.get();
+        } else {
+            provider = new PropertiesProvider(model.resources(), new PathResourceOpener(messagesDir));
+        }
 
         for (String tag : model.localeTags()) {
-            Either<List<SourceProblem>, Map<String, String>> snapshot = provider.templates(Locale.forLanguageTag(tag));
+            Either<List<SourceProblem>, Map<String, String>> snapshot;
+            if (customProvider) {
+                try {
+                    snapshot = provider.templates(Locale.forLanguageTag(tag));
+                } catch (RuntimeException e) {
+                    messager.printMessage(
+                            ERROR,
+                            "[" + tag + "] provider " + model.providerElement().getQualifiedName()
+                                    + " threw while producing templates: " + e.getMessage());
+                    messager.printMessage(NOTE, stackTraceOf(e));
+                    valid = false;
+                    continue;
+                }
+            } else {
+                snapshot = provider.templates(Locale.forLanguageTag(tag));
+            }
             Optional<List<SourceProblem>> sourceProblems = snapshot.left();
             if (sourceProblems.isPresent()) {
                 sourceProblems.get().forEach(p -> messager.printMessage(ERROR, "[" + tag + "] " + p.description()));
@@ -211,5 +273,47 @@ final class BundleValidator {
         } catch (MirroredTypeException e) {
             return e.getTypeMirror();
         }
+    }
+
+    private static boolean isDefaultProvider(TypeElement providerElement, ProcessingEnvironment env) {
+        TypeElement defaultElement = env.getElementUtils().getTypeElement("me.supcheg.messages.spi.PropertiesProvider");
+        return defaultElement != null
+                && env.getTypeUtils().isSameType(providerElement.asType(), defaultElement.asType());
+    }
+
+    /**
+     * Loads and instantiates a user-provided {@link TemplateProvider} via reflection, isolating
+     * every failure mode (missing class, throwing constructor, reflective access issues) so that
+     * one broken provider produces a diagnostic instead of crashing the whole {@code process()} round.
+     */
+    private static Optional<TemplateProvider> loadCustomProvider(
+            TypeElement providerElement, ProcessingEnvironment env) {
+        String fqn = providerElement.getQualifiedName().toString();
+        try {
+            Class<?> clazz = Class.forName(fqn, true, MessagesProcessor.class.getClassLoader());
+            Object instance = clazz.getDeclaredConstructor().newInstance();
+            return Optional.of((TemplateProvider) instance);
+        } catch (ClassNotFoundException e) {
+            env.getMessager()
+                    .printMessage(
+                            ERROR,
+                            "provider class " + fqn + " not found on the annotation processor's classpath; "
+                                    + "add its module to the 'annotationProcessor' configuration");
+        } catch (InvocationTargetException e) {
+            Throwable cause = e.getCause() != null ? e.getCause() : e;
+            env.getMessager()
+                    .printMessage(ERROR, "provider " + fqn + " threw during construction: " + cause.getMessage());
+            env.getMessager().printMessage(NOTE, stackTraceOf(cause));
+        } catch (ReflectiveOperationException e) {
+            env.getMessager().printMessage(ERROR, "cannot instantiate provider " + fqn + ": " + e.getMessage());
+            env.getMessager().printMessage(NOTE, stackTraceOf(e));
+        }
+        return Optional.empty();
+    }
+
+    private static String stackTraceOf(Throwable t) {
+        StringWriter sw = new StringWriter();
+        t.printStackTrace(new PrintWriter(sw));
+        return sw.toString();
     }
 }
