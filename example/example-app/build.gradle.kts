@@ -5,6 +5,7 @@ plugins {
 
 dependencies {
     implementation(project(":example:example-bundle-main"))
+    implementation(project(":example:example-bundle-provider"))
 }
 
 application {

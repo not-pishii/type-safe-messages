@@ -271,6 +271,9 @@ source (a database, a translation-management service), use `RUNTIME`
 resolution, or materialize the data into a resource file with a separate
 Gradle task feeding the provider's own module.
 
+See `example/example-translations` and `example/example-bundle-provider` in
+this repository for a complete, compiling version of this pattern.
+
 ## How it works
 
 The annotation processor, given `@Messages`-annotated contracts and

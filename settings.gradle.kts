@@ -22,5 +22,7 @@ include(
     "example:example-contract",
     "example:example-bundle-main",
     "example:example-bundle-alt",
+    "example:example-translations",
+    "example:example-bundle-provider",
     "example:example-app",
 )

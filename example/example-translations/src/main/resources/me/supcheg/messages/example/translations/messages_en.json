@@ -1,0 +1,4 @@
+{
+  "playerJoined": "{player} connected to the game",
+  "balance": "Account of {player}: {coins} coins"
+}
