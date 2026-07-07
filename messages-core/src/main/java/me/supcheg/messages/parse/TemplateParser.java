@@ -4,6 +4,7 @@ import me.supcheg.messages.Literal;
 import me.supcheg.messages.MessageTemplate;
 import me.supcheg.messages.Placeholder;
 import me.supcheg.messages.TemplatePart;
+import me.supcheg.routine.Either;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -13,7 +14,7 @@ public final class TemplateParser {
 
     private TemplateParser() {}
 
-    public static ParseResult parse(String key, String raw) {
+    public static Either<InvalidTemplate, MessageTemplate> parse(String key, String raw) {
         List<TemplatePart> parts = new ArrayList<>();
         StringBuilder literal = new StringBuilder();
         int i = 0;
@@ -25,11 +26,11 @@ public final class TemplateParser {
             } else if (c == '{') {
                 int close = raw.indexOf('}', i + 1);
                 if (close < 0) {
-                    return new ParseResult.Invalid(key, i, "unclosed '{'");
+                    return Either.left(new InvalidTemplate(key, i, "unclosed '{'"));
                 }
                 String name = raw.substring(i + 1, close);
                 if (!isValidName(name)) {
-                    return new ParseResult.Invalid(key, i + 1, "invalid placeholder name: '" + name + "'");
+                    return Either.left(new InvalidTemplate(key, i + 1, "invalid placeholder name: '" + name + "'"));
                 }
                 if (!literal.isEmpty()) {
                     parts.add(new Literal(literal.toString()));
@@ -45,7 +46,7 @@ public final class TemplateParser {
         if (!literal.isEmpty()) {
             parts.add(new Literal(literal.toString()));
         }
-        return new ParseResult.Parsed(new MessageTemplate(key, List.copyOf(parts)));
+        return Either.right(new MessageTemplate(key, List.copyOf(parts)));
     }
 
     private static boolean isValidName(String name) {
