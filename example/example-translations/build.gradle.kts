@@ -4,4 +4,6 @@ plugins {
 
 dependencies {
     api(project(":messages-spi"))
+
+    implementation(libs.jackson.databind)
 }
