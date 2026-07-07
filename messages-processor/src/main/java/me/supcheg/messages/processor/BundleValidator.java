@@ -8,6 +8,11 @@ import me.supcheg.messages.annotation.meta.MessageMeta;
 import me.supcheg.messages.annotation.meta.ParamMeta;
 import me.supcheg.messages.parse.ParseResult;
 import me.supcheg.messages.parse.TemplateParser;
+import me.supcheg.messages.spi.PathResourceOpener;
+import me.supcheg.messages.spi.PropertiesProvider;
+import me.supcheg.messages.spi.SourceProblem;
+import me.supcheg.messages.spi.TemplateProvider;
+import me.supcheg.routine.Either;
 
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.ExecutableElement;
@@ -15,18 +20,14 @@ import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.MirroredTypeException;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.ElementFilter;
-import java.io.IOException;
-import java.io.Reader;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Properties;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -58,6 +59,13 @@ final class BundleValidator {
             return Optional.empty();
         }
 
+        TypeMirror providerMirror = providerType(annotation);
+        TypeElement providerElement = (TypeElement) env.getTypeUtils().asElement(providerMirror);
+        if (providerElement == null) {
+            env.getMessager().printMessage(ERROR, "cannot resolve provider type", bundleElement);
+            return Optional.empty();
+        }
+
         String packageName = env.getElementUtils()
                 .getPackageOf(bundleElement)
                 .getQualifiedName()
@@ -68,7 +76,8 @@ final class BundleValidator {
                 List.of(annotation.locales()),
                 annotation.resolution(),
                 annotation.resources(),
-                packageName));
+                packageName,
+                providerElement));
     }
 
     /** Восстанавливает ContractModel из сгенерированного <Simple>Contract на classpath (имена параметров!). */
@@ -117,25 +126,21 @@ final class BundleValidator {
         boolean valid = true;
         Map<String, Map<String, MessageTemplate>> byLocale = new LinkedHashMap<>();
 
+        TemplateProvider provider = new PropertiesProvider(model.resources(), new PathResourceOpener(messagesDir));
+
         for (String tag : model.localeTags()) {
-            Path file = messagesDir.resolve(model.resources() + "_" + tag.replace('-', '_') + ".properties");
-            if (!Files.isRegularFile(file)) {
-                messager.printMessage(ERROR, "[" + tag + "] translations file not found: " + file);
+            Either<List<SourceProblem>, Map<String, String>> snapshot = provider.templates(Locale.forLanguageTag(tag));
+            Optional<List<SourceProblem>> sourceProblems = snapshot.left();
+            if (sourceProblems.isPresent()) {
+                sourceProblems.get().forEach(p -> messager.printMessage(ERROR, "[" + tag + "] " + p.description()));
                 valid = false;
                 continue;
             }
-            Properties properties = new Properties();
-            try (Reader reader = Files.newBufferedReader(file, StandardCharsets.UTF_8)) {
-                properties.load(reader);
-            } catch (IOException e) {
-                messager.printMessage(ERROR, "[" + tag + "] cannot read " + file + ": " + e.getMessage());
-                valid = false;
-                continue;
-            }
+            Map<String, String> properties = snapshot.right().orElseThrow();
 
             Map<String, MessageTemplate> content = new HashMap<>();
             for (ContractModel.MessageModel message : model.contract().messages()) {
-                String raw = properties.getProperty(message.key());
+                String raw = properties.get(message.key());
                 if (raw == null) {
                     messager.printMessage(ERROR, "[" + tag + "] missing message key '" + message.key() + "'");
                     valid = false;
@@ -180,7 +185,7 @@ final class BundleValidator {
             Set<String> knownKeys = model.contract().messages().stream()
                     .map(ContractModel.MessageModel::key)
                     .collect(Collectors.toSet());
-            for (String key : properties.stringPropertyNames()) {
+            for (String key : properties.keySet()) {
                 if (!knownKeys.contains(key)) {
                     messager.printMessage(WARNING, "[" + tag + "] key '" + key + "' is not declared in the contract");
                 }
@@ -193,6 +198,15 @@ final class BundleValidator {
     private static TypeMirror contractType(MessageBundle annotation) {
         try {
             annotation.contract();
+            throw new IllegalStateException("MirroredTypeException expected");
+        } catch (MirroredTypeException e) {
+            return e.getTypeMirror();
+        }
+    }
+
+    private static TypeMirror providerType(MessageBundle annotation) {
+        try {
+            annotation.provider();
             throw new IllegalStateException("MirroredTypeException expected");
         } catch (MirroredTypeException e) {
             return e.getTypeMirror();
