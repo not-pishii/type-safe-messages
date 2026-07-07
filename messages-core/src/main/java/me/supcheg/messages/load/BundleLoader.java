@@ -30,17 +30,20 @@ public final class BundleLoader {
 
     public static Either<List<ContentProblem>, Map<String, MessageTemplate>> load(
             Path dir, Locale locale, String baseName, ContractShape shape) {
-        TemplateProvider provider = new PropertiesProvider(baseName, new PathResourceOpener(dir));
-        return load(provider, locale, shape);
+        return load(new PropertiesProvider(baseName, new PathResourceOpener(dir)), locale, shape);
     }
 
     public static Either<List<ContentProblem>, Map<String, MessageTemplate>> load(
             TemplateProvider provider, Locale locale, ContractShape shape) {
-        Either<List<SourceProblem>, Map<String, String>> snapshot = provider.templates(locale);
-        return snapshot.mapLeft(sourceProblems -> sourceProblems.stream()
-                        .<ContentProblem>map(p -> new ContentProblem.SourceProblem(p.locale(), p.description()))
-                        .collect(Collectors.toUnmodifiableList()))
+        return provider.templates(locale)
+                .mapLeft(sourceProblems -> sourceProblems.stream()
+                        .map(BundleLoader::asContentProblem)
+                        .toList())
                 .flatMapRight(raw -> parseAndValidate(raw, locale, shape));
+    }
+
+    private static ContentProblem asContentProblem(SourceProblem sp) {
+        return new ContentProblem.SourceProblem(sp.locale(), sp.description());
     }
 
     private static Either<List<ContentProblem>, Map<String, MessageTemplate>> parseAndValidate(
