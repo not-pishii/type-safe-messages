@@ -271,8 +271,10 @@ source (a database, a translation-management service), use `RUNTIME`
 resolution, or materialize the data into a resource file with a separate
 Gradle task feeding the provider's own module.
 
-See `example/example-translations` and `example/example-bundle-provider` in
-this repository for a complete, compiling version of this pattern.
+See `example/example-translations`, `example/example-bundle-compile-custom`, and
+`example/example-bundle-runtime-custom` in this repository for a complete, compiling
+version of this pattern — the same `example-translations` module backs both a
+`COMPILE_TIME` and a `RUNTIME` bundle.
 
 ## How it works
 
@@ -309,11 +311,18 @@ Requires **Java 25+**.
 | `messages-processor` | The annotation processor that validates contracts/translations and generates bundle classes. |
 | `messages-spi` | The `TemplateProvider` SPI and the default `PropertiesProvider` implementation. Depend on this directly only if you're writing a custom provider. |
 
-The `example/` modules in this repository (`example-contract`,
-`example-bundle-main`, `example-bundle-alt`, `example-translations`,
-`example-bundle-provider`, `example-app`) are a compiling, tested, end-to-end
-demonstration of the whole flow — including a custom `TemplateProvider` — and
-are the source of every snippet above.
+The `example/` modules in this repository (`messages-declaration`,
+`example-bundle-compile-default`, `example-bundle-compile-custom`,
+`example-bundle-runtime-default`, `example-bundle-runtime-custom`,
+`example-translations`, `example-app`) are a compiling, tested, end-to-end
+demonstration of the whole flow — including a custom `TemplateProvider` and a
+full `[COMPILE_TIME, RUNTIME] × [default, custom provider]` bundle matrix — and
+are the source of every snippet above. `example-app` has no compile-time
+dependency on any of the four bundle modules: its `Main` discovers whichever
+one is on the runtime classpath through a `ServiceLoader`-based
+`GameMessagesSource` (declared in `messages-declaration`), and each matrix
+module is wired onto that classpath one at a time by the `runCompileDefault`,
+`runCompileCustom`, `runRuntimeDefault`, and `runRuntimeCustom` Gradle tasks.
 
 ## License
 
