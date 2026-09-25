@@ -1,5 +1,7 @@
 package me.supcheg.messages.processor;
 
+import me.supcheg.javafile.JavaFile;
+import me.supcheg.javafile.filer.JavaFileWriter;
 import me.supcheg.messages.annotation.MessageBundle;
 import me.supcheg.messages.annotation.Messages;
 
@@ -10,6 +12,7 @@ import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
 import javax.tools.Diagnostic;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.Set;
 
 public final class MessagesProcessor extends AbstractProcessor {
@@ -35,10 +38,8 @@ public final class MessagesProcessor extends AbstractProcessor {
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
         for (Element element : roundEnv.getElementsAnnotatedWith(Messages.class)) {
             ContractValidator.validate((TypeElement) element, processingEnv)
-                    .ifPresent(model -> writeSource(
-                            model.packageName() + "." + ContractWriter.generatedName(model),
-                            ContractWriter.write(model),
-                            element));
+                    .map(ContractWriter::write)
+                    .ifPresent(file -> writeSource(file, element));
         }
         for (Element element : roundEnv.getElementsAnnotatedWith(MessageBundle.class)) {
             processBundle((TypeElement) element);
@@ -60,30 +61,28 @@ public final class MessagesProcessor extends AbstractProcessor {
                                 bundleElement);
                 return;
             }
-            java.nio.file.Path messagesDir = dirOption != null ? java.nio.file.Path.of(dirOption) : null;
+            Path messagesDir = dirOption != null ? Path.of(dirOption) : null;
             BundleValidator.validate(model, messagesDir, processingEnv).ifPresent(byLocale -> {
-                String source =
+                var file =
                         switch (model.resolution()) {
                             case COMPILE_TIME -> CompileTimeBundleWriter.write(model, byLocale);
                             case RUNTIME -> RuntimeBundleWriter.write(model);
                         };
-                String simpleName =
-                        switch (model.resolution()) {
-                            case COMPILE_TIME -> CompileTimeBundleWriter.generatedName(model);
-                            case RUNTIME -> RuntimeBundleWriter.generatedName(model);
-                        };
-                writeSource(model.packageName() + "." + simpleName, source, bundleElement);
+                writeSource(file, bundleElement);
             });
         });
     }
 
-    private void writeSource(String fqn, String source, Element origin) {
-        try (var writer = processingEnv.getFiler().createSourceFile(fqn, origin).openWriter()) {
-            writer.write(source);
+    private void writeSource(JavaFile file, Element origin) {
+        try {
+            JavaFileWriter.writeTo(file, processingEnv.getFiler(), origin);
         } catch (IOException e) {
             processingEnv
                     .getMessager()
-                    .printMessage(Diagnostic.Kind.ERROR, "failed to write " + fqn + ": " + e.getMessage(), origin);
+                    .printMessage(
+                            Diagnostic.Kind.ERROR,
+                            "failed to write " + file.qualifiedName() + ": " + e.getMessage(),
+                            origin);
         }
     }
 }

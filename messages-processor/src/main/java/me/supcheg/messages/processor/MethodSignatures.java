@@ -1,27 +1,32 @@
 package me.supcheg.messages.processor;
 
-import java.util.stream.Collectors;
+import me.supcheg.javafile.code.Expr;
+import me.supcheg.javafile.type.ClassTypeRef;
+import me.supcheg.javafile.type.Types;
+
+import java.util.List;
+
+import static me.supcheg.javafile.code.Exprs.field;
+import static me.supcheg.javafile.code.Exprs.lambda;
+import static me.supcheg.javafile.code.Exprs.literal;
+import static me.supcheg.javafile.code.Exprs.literalNull;
+import static me.supcheg.javafile.code.Exprs.new_;
+import static me.supcheg.javafile.code.Exprs.switchExpr;
 
 final class MethodSignatures {
+    private static final ClassTypeRef Type_IllegalStateException = Types.of(IllegalStateException.class);
 
     private MethodSignatures() {}
 
-    static String parameters(ContractModel.MessageModel message) {
-        return message.params().stream().map(p -> p.type() + " " + p.name()).collect(Collectors.joining(", "));
-    }
-
-    /** Тело Function<String,Object> для подстановки аргументов. */
-    static String argumentsFunction(ContractModel.MessageModel message) {
+    static Expr argumentsFunctionExpr(ContractModel.MessageModel message) {
         if (message.params().isEmpty()) {
-            return "name -> null";
+            return lambda(List.of("name"), literalNull());
         }
-        String cases = message.params().stream()
-                .map(p -> "                case \"%s\" -> %s;".formatted(p.name(), p.name()))
-                .collect(Collectors.joining("\n"));
-        return """
-            name -> switch (name) {
-            %s
-                            default -> throw new IllegalStateException(name);
-                        }""".formatted(cases);
+        return lambda(List.of("name"), switchExpr(field("name"), sb -> {
+            for (var param : message.params()) {
+                sb.caseValue(literal(param.name()), field(param.name()));
+            }
+            sb.default_(cb -> cb.throw_(new_(Type_IllegalStateException, field("name"))));
+        }));
     }
 }
