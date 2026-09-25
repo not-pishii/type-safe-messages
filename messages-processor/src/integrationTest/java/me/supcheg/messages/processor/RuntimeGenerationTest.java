@@ -47,11 +47,11 @@ class RuntimeGenerationTest {
                 .contentsAsUtf8String();
         contents.contains(
                 "public static <T> Either<List<ContentProblem>, GameMessages<T>> load(Path dir, Locale locale, MessageRenderer<T> renderer)");
-        contents.contains("BundleLoader.load(dir, locale, \"messages\", com.example.GameMessagesContract.SHAPE)");
+        contents.contains("BundleLoader.load(dir, locale, \"messages\", GameMessagesContract.SHAPE)");
         contents.contains("content.get(\"playerJoined\").render(renderer, args)");
         contents.contains(
                 "public static <T> Either<List<ContentProblem>, GameMessages<T>> load(TemplateProvider provider, Locale locale, MessageRenderer<T> renderer)");
-        contents.contains("BundleLoader.load(provider, locale, com.example.GameMessagesContract.SHAPE)");
+        contents.contains("BundleLoader.load(provider, locale, GameMessagesContract.SHAPE)");
         contents.contains("import me.supcheg.messages.spi.TemplateProvider;");
     }
 
@@ -90,6 +90,6 @@ class RuntimeGenerationTest {
         var contents = assertThat(compilation)
                 .generatedSourceFile("com.example.impl.GameMessagesRuntimeBundle")
                 .contentsAsUtf8String();
-        contents.contains("com.example.api.GameMessagesContract.SHAPE");
+        contents.contains("import com.example.api.GameMessagesContract");
     }
 }

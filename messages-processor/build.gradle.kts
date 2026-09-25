@@ -7,6 +7,9 @@ plugins {
 dependencies {
     implementation(project(":messages-annotations"))
     implementation(project(":messages-core"))
+
+    implementation("me.supcheg:java-file-api-core:3.0.2")
+    implementation("me.supcheg:java-file-api-lang-model:3.0.2")
 }
 
 testing {
