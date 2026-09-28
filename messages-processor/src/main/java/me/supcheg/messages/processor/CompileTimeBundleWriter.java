@@ -66,14 +66,14 @@ final class CompileTimeBundleWriter {
                 var tagImplType = selfType.nested(BundleNaming.className(tag));
                 cb.withMethod(
                         BundleNaming.methodName(tag), parameterized(contractType, TypeVar_T), mb -> mb.withTypeParam(
-                                        TypeVar_T)
+                                        "T")
                                 .withModifiers(Modifier.PUBLIC, Modifier.STATIC)
                                 .withParam("renderer", Type_MessageRenderer_T)
                                 .withBody(body -> body.return_(new_(tagImplType, field("renderer")))));
 
                 var content = byLocale.get(tag);
                 cb.withNestedRecord(tagImplType, rb -> {
-                    rb.withTypeParam(TypeVar_T)
+                    rb.withTypeParam("T")
                             .withComponent("renderer", Type_MessageRenderer_T)
                             .withInterface(parameterized(contractType, TypeVar_T));
                     for (var message : model.contract().messages()) {
@@ -110,7 +110,7 @@ final class CompileTimeBundleWriter {
                     "forLocale",
                     parameterized(Types.OPTIONAL, parameterized(contractType, TypeVar_T)),
                     mb -> mb.withModifiers(Modifier.PUBLIC, Modifier.STATIC)
-                            .withTypeParam(TypeVar_T)
+                            .withTypeParam("T")
                             .withParam("locale", Type_Locale)
                             .withParam("renderer", Type_MessageRenderer_T)
                             .withBody(body ->

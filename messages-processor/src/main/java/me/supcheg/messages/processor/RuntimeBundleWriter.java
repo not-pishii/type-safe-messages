@@ -63,7 +63,7 @@ final class RuntimeBundleWriter {
         var loadType = parameterized(Type_Either, Type_List_ContentProblem, parameterized(contractType, TypeVar_T));
         return JavaFile.class_(
                 selfType, cb -> cb.withMethod("load", loadType, mb -> mb.withModifiers(Modifier.PUBLIC, Modifier.STATIC)
-                                .withTypeParam(TypeVar_T)
+                                .withTypeParam("T")
                                 .withParam("dir", Type_Path)
                                 .withParam("locale", Type_Locale)
                                 .withParam("renderer", Type_MessageRenderer_T)
@@ -80,7 +80,7 @@ final class RuntimeBundleWriter {
                                                         List.of("content"),
                                                         new_(implType, field("content"), field("renderer")))))))
                         .withMethod("load", loadType, mb -> mb.withModifiers(Modifier.PUBLIC, Modifier.STATIC)
-                                .withTypeParam(TypeVar_T)
+                                .withTypeParam("T")
                                 .withParam("provider", Type_TemplateProvider)
                                 .withParam("locale", Type_Locale)
                                 .withParam("renderer", Type_MessageRenderer_T)
@@ -96,7 +96,7 @@ final class RuntimeBundleWriter {
                                                         List.of("content"),
                                                         new_(implType, field("content"), field("renderer")))))))
                         .withNestedRecord(implType, rb -> {
-                            rb.withTypeParam(TypeVar_T)
+                            rb.withTypeParam("T")
                                     .withComponent("content", Type_Map_String_MessageTemplate)
                                     .withComponent("renderer", Type_MessageRenderer_T)
                                     .withInterface(parameterized(contractType, TypeVar_T));
